@@ -1,0 +1,12 @@
+/EasyPersist.sln.DotSettings
+/EasyPersist.sln.DotSettings.user
+/*.suo
+bin
+obj
+
+/EasyPersistDemo/*.user
+EasyPersistDemo.suo
+
+*.user
+
+*.recipe

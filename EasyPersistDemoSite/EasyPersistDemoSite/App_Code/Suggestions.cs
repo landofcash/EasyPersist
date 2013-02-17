@@ -5,8 +5,9 @@ using System.Data.SqlClient;
 using System.Web.Script.Services;
 using System.Web.Services;
 using ConvincingMail.AdvancedAutoSuggest;
-using Loc.HibernateMini;
-using Loc.HibernateMini.Attributes;
+using EasyPersist.Core;
+using EasyPersist.Core.Attributes;
+
 
 /// <summary>
 /// Summary description for Suggestions

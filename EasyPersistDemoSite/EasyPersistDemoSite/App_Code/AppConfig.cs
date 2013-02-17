@@ -13,8 +13,6 @@ using System.Web.UI.HtmlControls;
 /// </summary>
 public static class AppConfig {
     public static string ConnectionString() {
-        //return ConfigurationManager.ConnectionStrings["ConnectionString"].ConnectionString;
-        return
-            "server=LOCNOTE\\SQLEXPRESS;Initial Catalog=EasyPersistDemo;User Id=EasyPersistDemo;Password=123123;Trusted_Connection=no";
+        return ConfigurationManager.ConnectionStrings["ConnectionString"].ConnectionString;
     }
 }

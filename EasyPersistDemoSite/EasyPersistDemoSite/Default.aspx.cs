@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Web.UI;
+using EasyPersist.Core;
+using EasyPersist.Core.IFaces;
 using EasyPersist.Demo.Core;
-using Loc.HibernateMini;
-using Loc.HibernateMini.IFaces;
+
 
 namespace EasyPersistDemoSite {
     public partial class _Default : Page {

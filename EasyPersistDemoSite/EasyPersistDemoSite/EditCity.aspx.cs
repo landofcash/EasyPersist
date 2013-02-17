@@ -1,8 +1,9 @@
 using System;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using EasyPersist.Core;
 using EasyPersist.Demo.Core;
-using Loc.HibernateMini;
+
 
 public partial class EditCity : Page {
     //create the DAO using SQL Connection String

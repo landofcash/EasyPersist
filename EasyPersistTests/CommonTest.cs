@@ -13,15 +13,6 @@ namespace EasyPersist.Tests {
     [TestFixture]
     public class CommonTest : BaseDBDrivenText{
         [Test]
-        public void PrepareSelectSqlTest()
-        {
-            DataBaseObjectsFactorySQLServer dbo = new DataBaseObjectsFactorySQLServer(ConnectionSting);
-            TempPersistent temp = new TempPersistent();
-            //TODO fix this
-            //string selectQuery = dbo.PrepareSelectSql(temp, true);
-            //Assert.Equals("SELECT [TempPersistent].[Caption],[TempPersistentBase].[TempPersistentBaseId],[TempPersistentBase].[Name],[TempPersistentBase].[TempPersistentAloneId] FROM [TempPersistent] INNER JOIN TempPersistentBase ON [TempPersistentBase].[TempPersistentBaseId] = [TempPersistent].[TempPersistentBaseId] LEFT OUTER JOIN [ThirdLevelTempPersistent] ON [ThirdLevelTempPersistent].[TempPersistentBaseId] = [TempPersistent].[TempPersistentBaseId] WHERE 1=1  AND [ThirdLevelTempPersistent].[TempPersistentBaseId] is null  AND [TempPersistent].[TempPersistentBaseId] = @id", selectQuery);
-        }
-        [Test]
         public void LoadTest() {
             DataBaseObjectsFactorySQLServer dbo = new DataBaseObjectsFactorySQLServer(ConnectionSting);
             TempPersistent temp = new TempPersistent();
@@ -280,7 +271,6 @@ namespace EasyPersist.Tests {
             StringAssert.AreEqualIgnoringCase(items[2].Name, item3.Name);
             Assert.AreEqual(1, item3.ItemTypes.Count);//1 expected as duplicates are not allowed
             Assert.AreEqual(itemTypes[1].Id, ((ItemType)item3.ItemTypes[0]).Id);
-            
             
             //test right side
             //1

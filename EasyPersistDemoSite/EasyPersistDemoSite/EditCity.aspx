@@ -19,8 +19,6 @@
 				<asp:TextBox Text="<%#City.County.Id%>" ID="CountyIdHidden" style="display:none;" runat="server" />
 				<asp:TextBox ID="CountyTextBox" Text="<%#Server.HtmlDecode(City.County.Name)%>" runat="server"></asp:TextBox>
 				<br /><span class="editcomment">Start typing in the box to see a list of suggestions. You should select one from the list.</span>
-		<cc1:AdvancedAutoSuggestExtender ID="AdvancedAutoSuggestExtender1" TargetControlID="CountyTextBox" UpdateField="CountyIdHidden" ServiceUrl="Suggestions.asmx/CountySuggest" runat="server">
-				</cc1:AdvancedAutoSuggestExtender>
 				<asp:CustomValidator ID="CountyIdCustomValidator" ValidateEmptyText="true" ControlToValidate="CountyIdHidden" OnServerValidate="CountyIdCustomValidator_OnServerValidate" runat="server" ErrorMessage="Please select county from the list" Display="Dynamic"><br />Please select county from the suggestions list.</asp:CustomValidator></td>
 		</tr>
 		<tr class="editcontent">

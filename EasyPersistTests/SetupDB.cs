@@ -12,7 +12,7 @@ namespace EasyPersist.Tests
     [SetUpFixture]
     public class SetupDB : BaseDBDrivenText
     {
-        [SetUp]
+        [OneTimeSetUp]
         public void InitDb()
         {
             

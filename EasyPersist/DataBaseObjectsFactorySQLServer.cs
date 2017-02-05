@@ -25,6 +25,10 @@ namespace EasyPersist.Core {
         {
             get { return _cache; }
         }
+        public DataBaseObjectsFactorySQLServer()
+        {
+            
+        }
 
         public DataBaseObjectsFactorySQLServer(string sqlConnectionString) {
             SqlConnectionString = sqlConnectionString;
@@ -40,7 +44,7 @@ namespace EasyPersist.Core {
         /// <typeparam name="T">type of the IPersistent to load</typeparam>
         /// <param name="id">ID of an object</param>
         /// <returns>Object loaded from DB</returns>
-        public T getFromDb<T>(int id) where T:IPersistent
+        public virtual T getFromDb<T>(int id) where T:IPersistent
         {
            return (T)getFromDb(id, typeof(T));
         }
@@ -137,7 +141,7 @@ namespace EasyPersist.Core {
             return null;
         }
 
-        public IPersistent getFromDb(int id, Type objectType, bool lazy = true) {
+        public virtual IPersistent getFromDb(int id, Type objectType, bool lazy = true) {
             //ѕытаемс€ заюзать дефолтный конструктор
             ConstructorInfo persistentConstructor = objectType.GetConstructor(
                 BindingFlags.Instance | BindingFlags.Public,
@@ -163,7 +167,7 @@ namespace EasyPersist.Core {
         /// <param name="sql">an sql which returns a single row result</param>
         /// <param name="objectType">Type of object to return</param>
         /// <returns>an IPersistent ogect of type from param</returns>
-        public IPersistent getFromDb(string sql, Type objectType) {
+        public virtual IPersistent getFromDb(string sql, Type objectType) {
             IList<IPersistent> objectsList = getListFromDb(sql, objectType);
             if (objectsList.Count > 1) {
                 throw new CommonEasyPersistException("Too many objects loaded. Rows count:" + objectsList.Count);
@@ -179,7 +183,7 @@ namespace EasyPersist.Core {
         /// <param name="command">an sql which returns a single row result</param>
         /// <param name="type">Type of object to return</param>
         /// <returns>an IPersistent ogect of type from param</returns>
-        public IPersistent getFromDb(SqlCommand command, Type type) {
+        public virtual IPersistent getFromDb(SqlCommand command, Type type) {
             IList<IPersistent> objectsList = getListFromDb(command, type);
             if (objectsList.Count > 1) {
                 throw new CommonEasyPersistException("Too many objects loaded. Rows count:" + objectsList.Count);
@@ -283,7 +287,7 @@ namespace EasyPersist.Core {
         /// <param name="cmd">SqlCommand запрс к базе</param>
         /// <param name="collectionObjectsClass">Objects that will be restored from db records</param>
         /// <returns> Ilist of collectionObjectsClass Objects</returns>
-        public IList<IPersistent> getListFromDb(SqlCommand cmd, Type collectionObjectsClass) {
+        public virtual IList<IPersistent> getListFromDb(SqlCommand cmd, Type collectionObjectsClass) {
             LOGGER.Log(LogLevel.Info, String.Format("Loading List SQL:{0}", cmd.CommandText));
             DataTable table = FillTableFromDatabase(cmd);
             return getListFromDb(table, collectionObjectsClass);
@@ -295,7 +299,7 @@ namespace EasyPersist.Core {
         /// <typeparam name="T">Typeof IPersistent object to return </typeparam>
         /// <param name="cmd">SQL Sommand</param>
         /// <returns>List of objects</returns>
-        public List<T> getListFromDb<T>(SqlCommand cmd) where T : IPersistent
+        public virtual List<T> getListFromDb<T>(SqlCommand cmd) where T : IPersistent
         {
             IList<IPersistent> items = getListFromDb(cmd, typeof(T));
             List<T> result = items.Cast<T>().ToList();
@@ -309,7 +313,7 @@ namespace EasyPersist.Core {
         /// <param name="collectionObjectsClass">Objects that will be restored from db records</param>
         /// <param name="alreadyLoaded">Already Loaded objects</param>
         /// <returns> Ilist of collectionObjectsClass Objects</returns>
-        public IList<IPersistent> getListFromDb(SqlCommand cmd, Type collectionObjectsClass, IList<IPersistent> alreadyLoaded) {
+        public virtual IList<IPersistent> getListFromDb(SqlCommand cmd, Type collectionObjectsClass, IList<IPersistent> alreadyLoaded) {
             LOGGER.Log(LogLevel.Info, String.Format("Loading List Loaded objects:{0} SQL:{1}", alreadyLoaded.Count, cmd.CommandText));
             DataTable table = FillTableFromDatabase(cmd);
             return getListFromDb(table, collectionObjectsClass, alreadyLoaded);
@@ -338,7 +342,7 @@ namespace EasyPersist.Core {
         /// <typeparam name="T">Typeof IPersistent object to return </typeparam>
         /// <param name="cmd">SQL Sommand</param>
         /// <returns>List of objects</returns>
-        public List<T> getListFromDb<T>(String sql) where T : IPersistent
+        public virtual List<T> getListFromDb<T>(String sql) where T : IPersistent
         {
             IList<IPersistent> items = getListFromDb(sql, typeof (T));
             List<T> result = items.Cast<T>().ToList();
@@ -351,7 +355,7 @@ namespace EasyPersist.Core {
         /// <param name="sql">Sql запрс к базе</param>
         /// <param name="collectionObjectsClass">Objects that will be restored from db records</param>
         /// <returns> Ilist of collectionObjectsClass Objects</returns>
-        public IList<IPersistent> getListFromDb(String sql, Type collectionObjectsClass) {
+        public virtual IList<IPersistent> getListFromDb(String sql, Type collectionObjectsClass) {
             SqlCommand cmd = new SqlCommand(sql);
             cmd.CommandTimeout = CommandTimeout;
             return getListFromDb(cmd, collectionObjectsClass);
@@ -363,7 +367,7 @@ namespace EasyPersist.Core {
         /// <param name="collectionObjectsClass">Objects that will be restored from db records</param>
         /// <param name="alreadyLoaded">Already Loaded objects</param>
         /// <returns> Ilist of collectionObjectsClass Objects</returns>
-        public IList<IPersistent> getListFromDb(String sql, Type collectionObjectsClass, IList<IPersistent> alreadyLoaded) {
+        public virtual IList<IPersistent> getListFromDb(String sql, Type collectionObjectsClass, IList<IPersistent> alreadyLoaded) {
             LOGGER.Log(LogLevel.Info, String.Format("Loading List Loaded objects:{0} SQL:{1}", alreadyLoaded.Count, sql));
             SqlCommand cmd = new SqlCommand(sql);
             cmd.CommandTimeout = CommandTimeout;
@@ -375,7 +379,7 @@ namespace EasyPersist.Core {
         /// <param name="cmd"></param>
         /// <param name="collectionObjectsClass"></param>
         /// <returns></returns>
-        public ArrayList GetReadOnlyListFromDb(SqlCommand cmd, Type collectionObjectsClass) {
+        public virtual ArrayList GetReadOnlyListFromDb(SqlCommand cmd, Type collectionObjectsClass) {
             LOGGER.Log(LogLevel.Info, String.Format("Loading Read Only List SQL:{0}", cmd.CommandText));
             ApplayTransaction(cmd);
             DataTable table = FillTableFromDatabase(cmd);
@@ -387,7 +391,7 @@ namespace EasyPersist.Core {
         /// <param name="table"></param>
         /// <param name="collectionObjectsClass"></param>
         /// <returns></returns>
-        public ArrayList GetReadOnlyListFromDb(DataTable table, Type collectionObjectsClass) {
+        public virtual ArrayList GetReadOnlyListFromDb(DataTable table, Type collectionObjectsClass) {
             ArrayList list = new ArrayList();
             foreach (DataRow row in table.Rows) {
                 //ѕытаемс€ заюзать дефолтный конструктор
@@ -449,7 +453,7 @@ namespace EasyPersist.Core {
         /// </summary>
         /// <param name="persistent">an object to save or update</param>
         /// <param name="transaction">a transaction to use</param>
-        public void SaveOrUpdate(IPersistent persistent, SqlTransaction transaction) {
+        public virtual void SaveOrUpdate(IPersistent persistent, SqlTransaction transaction) {
             bool update = false;
             if (persistent == null) {
                 throw new CommonEasyPersistException("Can't save null in db");
@@ -676,7 +680,7 @@ namespace EasyPersist.Core {
         /// </summary>
         /// <param name="persistent"></param>
         /// <param name="transaction"></param>
-        public void DeleteObject(ref IPersistent persistent, SqlTransaction transaction) {
+        public virtual void DeleteObject(ref IPersistent persistent, SqlTransaction transaction) {
             string deleteSql = string.Format("DELETE FROM {0} WHERE {1}=@id", GetTableName(persistent.GetType()), IdColumnName(persistent));
             SqlCommand sqlCommand = new SqlCommand(deleteSql, transaction.Connection, transaction);
             sqlCommand.Parameters.AddWithValue("id", persistent.Id);
@@ -708,7 +712,7 @@ namespace EasyPersist.Core {
         /// </summary>
         /// <param name="parent">parent item</param>
         /// <param name="child">child item</param>
-        public void SaveManyToManyLinkItem(IPersistent parent, IPersistent child)
+        public virtual void SaveManyToManyLinkItem(IPersistent parent, IPersistent child)
         {
             var props = parent.GetType().GetProperties().Where(
                 prop => Attribute.IsDefined(prop, typeof(PersistentCollectionManyToManyAttribute)));
@@ -821,7 +825,7 @@ namespace EasyPersist.Core {
         /// </summary>
         /// <param name="cmd">запрос</param>
         /// <returns>(int)cmd.ExecuteScalar();</returns>
-        public int CountItems(SqlCommand cmd) {
+        public virtual int CountItems(SqlCommand cmd) {
             SqlConnection sqlConnection = ApplayTransaction(cmd);
             if (sqlConnection.State != ConnectionState.Open)
             {
@@ -845,7 +849,7 @@ namespace EasyPersist.Core {
         /// </summary>
         /// <param name="cmd"></param>
         /// <returns>returns cmd.ExecuteScalar(); Object</returns>
-        public object ExecuteScalar(SqlCommand cmd) {
+        public virtual object ExecuteScalar(SqlCommand cmd) {
             SqlConnection sqlConnection = ApplayTransaction(cmd);
             if (sqlConnection.State!=ConnectionState.Open) {
                 sqlConnection.Open();
@@ -874,7 +878,7 @@ namespace EasyPersist.Core {
         /// <param name="cmd">Command to execute</param>
         /// <param name="transaction">Trunsection to use</param>
         /// <returns>cmd.ExecuteScalar()</returns>
-        public object ExecuteScalar(SqlCommand cmd, SqlTransaction transaction) {
+        public virtual object ExecuteScalar(SqlCommand cmd, SqlTransaction transaction) {
             object res;
             cmd.Transaction = transaction;
             cmd.Connection = transaction.Connection;
@@ -888,7 +892,7 @@ namespace EasyPersist.Core {
         /// </summary>
         /// <param name="cmd">SQL command to execute</param>
         /// <returns>The number of rows affected</returns>
-        public int ExecuteNonQuery(SqlCommand cmd) {
+        public virtual int ExecuteNonQuery(SqlCommand cmd) {
             SqlConnection sqlConnection = ApplayTransaction(cmd);
             if (sqlConnection.State != ConnectionState.Open)
             {
@@ -924,7 +928,7 @@ namespace EasyPersist.Core {
         /// </summary>
         /// <param name="cmd">SQL command to execute</param>
         /// <returns>The number of rows affected</returns>
-        public int ExecuteNonQuery(SqlCommand cmd, SqlTransaction transaction) {
+        public virtual int ExecuteNonQuery(SqlCommand cmd, SqlTransaction transaction) {
             cmd.Transaction = transaction;
             cmd.Connection = transaction.Connection;
             LOGGER.Log(LogLevel.Info, String.Format("Executing ExecuteNonQuery command SQL:{0}", cmd.CommandText));
@@ -937,7 +941,7 @@ namespace EasyPersist.Core {
         /// </summary>
         /// <param name="cmd"></param>
         /// <returns></returns>
-        public DataTable GetList(SqlCommand cmd) {
+        public virtual DataTable GetList(SqlCommand cmd) {
             LOGGER.Log(LogLevel.Info, String.Format("Executing GetList command SQL:{0}", cmd.CommandText));
             DataTable table = FillTableFromDatabase(cmd);
             cmd.Dispose();
@@ -951,7 +955,7 @@ namespace EasyPersist.Core {
         /// </summary>
         /// <param name="cmdText">SQL query text</param>
         /// <returns>The number of rows affected</returns>
-        public int ExecuteNonQuery(string cmdText) {
+        public virtual int ExecuteNonQuery(string cmdText) {
             SqlCommand sqlCommand = new SqlCommand(cmdText);
             return ExecuteNonQuery(sqlCommand);
         }

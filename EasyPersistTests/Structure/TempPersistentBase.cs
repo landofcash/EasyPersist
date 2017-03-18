@@ -1,4 +1,5 @@
 using System.Data;
+using EasyPersist.Core;
 using EasyPersist.Core.Attributes;
 using EasyPersist.Core.IFaces;
 
@@ -21,7 +22,7 @@ namespace EasyPersist.Tests.Structure
             get { return _id; }
             set { _id = value; }
         }
-        [PersistentProperty("Name", "DESC")]
+        [PersistentProperty("Name", SortOrder.DESC)]
         public string Name
         {
             get { return _name; }

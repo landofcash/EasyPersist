@@ -54,7 +54,13 @@ namespace EasyPersist.Core {
             }
             if (classAttributes.Length == 1) {
                 PersistentClassAttribute persistentClassAttribute = (PersistentClassAttribute)classAttributes[0];
-                return "["+persistentClassAttribute.DbTableName+"]";
+                string[] items = persistentClassAttribute.DbTableName.Split('.');
+                var result = "";
+                foreach (var item in items)
+                {
+                    result += "[" + item + "].";
+                }
+                return result.Trim('.');
             }
             LOGGER.Log(LogLevel.Error, "Cant find PersistentClassAttributes for class:" + type.Name);
             throw new CommonEasyPersistException("Cant find PersistentClassAttributes for class:" + type.Name);

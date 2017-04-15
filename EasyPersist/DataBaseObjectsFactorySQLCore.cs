@@ -232,7 +232,15 @@ namespace EasyPersist.Core {
                                                     }
                                                 }
                                                 //just simple type property
-                                                pi.SetValue(persistent, value, null);
+                                                if (ppa.Converter != null)
+                                                {
+                                                    
+                                                    pi.SetValue(persistent, ppa.Converter.Convert(value), null);
+                                                }
+                                                else
+                                                {
+                                                    pi.SetValue(persistent, value, null);
+                                                }
                                             } else {
                                                 pi.SetValue(persistent, prop_ci.Invoke(new[] { dr[dbFieldName] }), null);
                                             }

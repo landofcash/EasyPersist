@@ -118,6 +118,7 @@
     <Compile Include="ArrayListWrapper.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="IFaces\IDBValueConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

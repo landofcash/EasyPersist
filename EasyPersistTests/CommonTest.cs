@@ -1,11 +1,7 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using System.Reflection;
 using EasyPersist.Core;
-using EasyPersist.Core.Attributes;
-using EasyPersist.Core.Exceptions;
-using EasyPersist.Core.IFaces;
 using EasyPersist.Tests.Structure;
 using NUnit.Framework;
 
@@ -21,7 +17,7 @@ namespace EasyPersist.Tests {
             dbo.SaveOrUpdate(temp);
 
             dbo = new DataBaseObjectsFactorySQLServer(ConnectionSting);
-            TempPersistent temp1 = (TempPersistent)dbo.getFromDb(temp.Id, typeof(TempPersistent));
+            TempPersistent temp1 = dbo.getFromDb<TempPersistent>(temp.Id);
             Assert.AreEqual(temp.Id, temp1.Id);
             StringAssert.AreEqualIgnoringCase("Name Of TempPersistent", temp1.Name);
             StringAssert.AreEqualIgnoringCase("Caption Of TempPersistent", temp1.Caption);
@@ -35,7 +31,7 @@ namespace EasyPersist.Tests {
             temp.Caption = "SaveInheritedTest Caption";
             dbo.SaveOrUpdate(temp);
             dbo = new DataBaseObjectsFactorySQLServer(ConnectionSting);
-            AnotherTempPersistent temp1 = (AnotherTempPersistent)dbo.getFromDb(temp.Id, typeof(AnotherTempPersistent));
+            AnotherTempPersistent temp1 = dbo.getFromDb<AnotherTempPersistent>(temp.Id);
             Assert.IsNull(temp1);
         }
         [Test]
@@ -48,7 +44,7 @@ namespace EasyPersist.Tests {
             dbo.SaveOrUpdate(temp);
 
             dbo = new DataBaseObjectsFactorySQLServer(ConnectionSting);
-            TempPersistentAlone temp1 = (TempPersistentAlone)dbo.getFromDb(temp.Id, typeof(TempPersistentAlone));
+            TempPersistentAlone temp1 = dbo.getFromDb<TempPersistentAlone>(temp.Id);
             Assert.AreEqual(temp.Id, temp1.Id);
             Assert.IsNull(temp.IntNullable);
             Assert.AreEqual(wdate, temp.DateTime);
@@ -69,7 +65,7 @@ namespace EasyPersist.Tests {
             dbo.SaveOrUpdate(temp);
             //creating loading and testing
             dbo = new DataBaseObjectsFactorySQLServer(ConnectionSting);
-            TempPersistent temp1 = (TempPersistent)dbo.getFromDb(temp.Id, typeof(TempPersistent));
+            TempPersistent temp1 = dbo.getFromDb<TempPersistent>(temp.Id);
             StringAssert.AreEqualIgnoringCase(temp.Name, temp1.Name);
             StringAssert.AreEqualIgnoringCase(temp.Caption, temp1.Caption);
             StringAssert.AreEqualIgnoringCase(temp.TempPersistentAlone.Name, child.Name);
@@ -96,7 +92,7 @@ namespace EasyPersist.Tests {
             dbo.SaveOrUpdate(parent2);
             //creating loading and testing
             dbo = new DataBaseObjectsFactorySQLServer(ConnectionSting);
-            TempPersistentAlone temp1 = (TempPersistentAlone)dbo.getFromDb(child.Id, typeof(TempPersistentAlone));
+            TempPersistentAlone temp1 = dbo.getFromDb<TempPersistentAlone>(child.Id);
             Assert.AreEqual(2, temp1.TempPersistentBaseArrayList.Count);
             Assert.AreEqual(typeof(TempPersistent), temp1.TempPersistentBaseArrayList[0].GetType());
             Assert.AreEqual(typeof(ThirdLevelTempPersistent), temp1.TempPersistentBaseArrayList[1].GetType());

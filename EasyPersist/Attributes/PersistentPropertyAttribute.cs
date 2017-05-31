@@ -41,7 +41,7 @@ namespace EasyPersist.Core.Attributes
         /// No needed for strings, persistent objects, and types with new(string) constructor
         /// </param>
         /// <param name="order">SortOrder when an object is loaded in child collections</param>
-        public PersistentPropertyAttribute(string dbFieldName, DbType dbType, SortOrder order, DBValueConverterBase converter = null) : this(dbFieldName, dbType)
+        public PersistentPropertyAttribute(string dbFieldName, DbType dbType, SortOrder order) : this(dbFieldName, dbType)
         {
             SetOrder(order);
         }

@@ -104,8 +104,8 @@ namespace EasyPersist.Core {
             SqlCommand cmd = GetSqlCommand(selectOfferString);
             cmd.Parameters.AddWithValue("id", id);
             //
-            DataTable table = FillTableFromDatabase(cmd);
             LOGGER.Log(LogLevel.Info, String.Format("Getting an object with id:{0} SQL:{1}", id, selectOfferString));
+            DataTable table = FillTableFromDatabase(cmd);
             if (table.Rows.Count > 0) {
                 createObject(table.Rows[0], persistent, alreadyLoaded, lazy);
                 if (lazy) {
@@ -373,24 +373,61 @@ namespace EasyPersist.Core {
             cmd.CommandTimeout = CommandTimeout;
             return getListFromDb(cmd, collectionObjectsClass, alreadyLoaded);
         }
+        public virtual List<T> GetReadOnlyListFromDb<T>(SqlCommand cmd)
+        {
+            LOGGER.Log(LogLevel.Info, String.Format("Loading Read Only List SQL:{0}", cmd.CommandText));
+            ApplayTransaction(cmd);
+            DataTable table = FillTableFromDatabase(cmd);
+            return GetReadOnlyListFromDb<T>(table);
+        }
+        public virtual List<T> GetReadOnlyListFromDb<T>(DataTable table)
+        {
+            List<T> list = new List<T>();
+            foreach (DataRow row in table.Rows)
+            {
+                //ѕытаемс€ заюзать дефолтный конструктор
+                ConstructorInfo persistentConstructor = typeof(T).GetConstructor(
+                    BindingFlags.Instance | BindingFlags.Public,
+                    null,
+                    CallingConventions.HasThis,
+                    Type.EmptyTypes,
+                    null
+                );
+                if (persistentConstructor == null)
+                {
+                    throw new CommonEasyPersistException("Can't find default constructor in class " + typeof(T).FullName);
+                }
+                Object[] parameters = new Object[0];
+                T obj = (T)persistentConstructor.Invoke(parameters);
+                //создаем обьект из строки данных
+                CreateReadOnlyObject(row, obj);
+                list.Add(obj);
+            }
+            return list;
+        }
+
         /// <summary>
         /// Gets a collection of objects from db 
         /// </summary>
         /// <param name="cmd"></param>
         /// <param name="collectionObjectsClass"></param>
         /// <returns></returns>
+        [Obsolete("Use Generic GetReadOnlyListFromDb")]
         public virtual ArrayList GetReadOnlyListFromDb(SqlCommand cmd, Type collectionObjectsClass) {
             LOGGER.Log(LogLevel.Info, String.Format("Loading Read Only List SQL:{0}", cmd.CommandText));
             ApplayTransaction(cmd);
             DataTable table = FillTableFromDatabase(cmd);
             return GetReadOnlyListFromDb(table, collectionObjectsClass);
         }
+
+
         /// <summary>
         /// Gets a collection of objects from db 
         /// </summary>
         /// <param name="table"></param>
         /// <param name="collectionObjectsClass"></param>
         /// <returns></returns>
+        [Obsolete("Use Generic GetReadOnlyListFromDb")]
         public virtual ArrayList GetReadOnlyListFromDb(DataTable table, Type collectionObjectsClass) {
             ArrayList list = new ArrayList();
             foreach (DataRow row in table.Rows) {

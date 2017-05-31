@@ -12,7 +12,7 @@ namespace EasyPersist.Tests
 
         protected DatabaseParam DBParam
             = new DatabaseParam() { 
-                ServerName = "localhost\\SQLEXPRESS", 
+                ServerName = "localhost\\SQL2016", 
                 MasterPassword = "z", 
                 MasterLogin = "sa",
                 DatabaseName = "EasyPersistTestsUT"

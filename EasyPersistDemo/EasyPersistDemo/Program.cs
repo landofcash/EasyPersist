@@ -49,7 +49,7 @@ INNER JOIN County ON City.CountyId=County.CountyId
 INNER JOIN State ON County.StateId=State.StateId
 ORDER BY City.Name, County.Name, State.Name
 ";
-            ArrayList locations = program.Dao.GetReadOnlyListFromDb(new SqlCommand(locationSql), typeof(TestLocation));
+            List<TestLocation> locations = program.Dao.GetReadOnlyListFromDb<TestLocation>(new SqlCommand(locationSql));
             foreach (TestLocation location in locations)
             {
                 Console.WriteLine(location.ToString());

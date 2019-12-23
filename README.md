@@ -236,8 +236,8 @@ Note that the lib caches objects.
 
 
 Use CsUnit to run tests
-[http://www.csUnit.org] (http://www.csUnit.org)
+http://www.csUnit.org
 And unitRun plug-in may be also helpful
-[http://www.jetbrains.com/unitrun/] (http://www.jetbrains.com/unitrun/)
+http://www.jetbrains.com/unitrun/
 
 Thanks.

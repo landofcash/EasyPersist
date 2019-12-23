@@ -34,7 +34,7 @@
     </SccAuxPath>
     <SccProvider>
     </SccProvider>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <OldToolsVersion>2.0</OldToolsVersion>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
@@ -101,15 +101,19 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
-      <HintPath>..\packages\NLog.4.4.1\lib\net40\NLog.dll</HintPath>
+      <HintPath>..\packages\NLog.4.5.4\lib\net35\NLog.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System">
       <Name>System</Name>
     </Reference>
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Data">
       <Name>System.Data</Name>
     </Reference>
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
+    <Reference Include="System.Transactions" />
     <Reference Include="System.XML">
       <Name>System.XML</Name>
     </Reference>

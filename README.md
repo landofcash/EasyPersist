@@ -52,22 +52,22 @@ namespace EasyPersistDemo {
         private string _county;
         private string _state;
         
-        [PersistentProperty("LocCityId", DbType.Int32)](PersistentProperty(_LocCityId_,-DbType.Int32))
+        [PersistentProperty("LocCityId", DbType.Int32)]
         public int Id {
             get { return _id; }
             set { _id = value; }
         }
-        [PersistentProperty("CityName", DbType.String)](PersistentProperty(_CityName_,-DbType.String))
+        [PersistentProperty("CityName", DbType.String)]
         public string City {
             get { return _city; }
             set { _city = value; }
         }
-        [PersistentProperty("CountyName", DbType.String)](PersistentProperty(_CountyName_,-DbType.String))
+        [PersistentProperty("CountyName", DbType.String)]
         public string County {
             get { return _county; }
             set { _county = value; }
         }
-        [PersistentProperty("StateName", DbType.String)](PersistentProperty(_StateName_,-DbType.String))
+        [PersistentProperty("StateName", DbType.String)]
         public string State {
             get { return _state; }
             set { _state = value; }
@@ -87,18 +87,18 @@ The lib will take this TestLocation, loop thru properties marked with Persistent
  
 Ok now you can load data from db
 ```C#
-string locationSql = @"
-SELECT City.CityId as LocCityId, City.Name as CityName, County.Name as CountyName, State.Name as StateName
-FROM City 
-INNER JOIN County ON City.CountyId=County.CountyId
-INNER JOIN State ON County.StateId=State.StateId
-ORDER BY City.Name, County.Name, State.Name
-";
-            ArrayList locations = program.Dao.GetReadOnlyListFromDb(new SqlCommand(locationSql), typeof(TestLocation));
-            foreach (TestLocation location in locations)
-            {
-                Console.WriteLine(location.ToString());
-            }
+    string locationSql = @"
+    SELECT City.CityId as LocCityId, City.Name as CityName, County.Name as CountyName, State.Name as StateName
+    FROM City 
+    INNER JOIN County ON City.CountyId=County.CountyId
+    INNER JOIN State ON County.StateId=State.StateId
+    ORDER BY City.Name, County.Name, State.Name
+    ";
+    ArrayList locations = program.Dao.GetReadOnlyListFromDb(new SqlCommand(locationSql), typeof(TestLocation));
+    foreach (TestLocation location in locations)
+    {
+        Console.WriteLine(location.ToString());
+    }
 ```
 
 Very easy. All you need is a sql query (column names should be the same as defined in TestLocation property attributes). And call GetReadOnlyListFromDb method:
@@ -113,14 +113,16 @@ It returns a list of objects of type TestLocation.
 Persistent is the the class which is reflected by db table and could be loaded and saved in db.
 “Persistent” classes are the core of your application and the data layer. Persistent class is marked with PersistentClass Attribute and implements IPersistent interface. 
 e.g.:
-```
-[PersistentClass("City")](PersistentClass(_City_))
+
+```C#
+[PersistentClass("City")]
  public class City: IPersistent {
 ```
 
 There should be an Id property required by interface
-```
-[PersistentProperty("CityId", DbType.Int32)](PersistentProperty(_CityId_,-DbType.Int32))
+
+```C#
+[PersistentProperty("CityId", DbType.Int32)]
 public int Id {
    get { return _id; }
    set { _id = value; }
@@ -129,14 +131,14 @@ public int Id {
 
 All properties which should be saved in db are marked with PersistentProperty attribute
 
-```
+```C#
 using System;
 using System.Data;
 using Loc.HibernateMini.Attributes;
 using Loc.HibernateMini.IFaces;
 
 namespace EasyPersistDemo.Core {
-    [PersistentClass("City")](PersistentClass(_City_))
+    [PersistentClass("City")]
     public class City : IPersistent {
         //ID of the city (required to identify a record in db. usually it is identity column)
         private int _id;
@@ -151,37 +153,37 @@ namespace EasyPersistDemo.Core {
         //Persistent object (many-to-one)
         private County _county; 
         
-        [PersistentProperty("CityId", DbType.Int32)](PersistentProperty(_CityId_,-DbType.Int32))
+        [PersistentProperty("CityId", DbType.Int32)]
         public int Id
         {
             get { return _id; }
             set { _id = value; }
         }
-        [PersistentProperty("Name", DbType.String)](PersistentProperty(_Name_,-DbType.String))
+        [PersistentProperty("Name", DbType.String)]
         public string Name
         {
             get { return _name; }
             set { _name = value; }
         }
-        [PersistentProperty("ChangeDate", DbType.DateTime)](PersistentProperty(_ChangeDate_,-DbType.DateTime))
+        [PersistentProperty("ChangeDate", DbType.DateTime)]
         public DateTime? ChangeDate
         {
             get { return _changeDate; }
             set { _changeDate = value; }
         }
-        [PersistentProperty("IsActive", DbType.Boolean)](PersistentProperty(_IsActive_,-DbType.Boolean))
+        [PersistentProperty("IsActive", DbType.Boolean)]
         public bool IsActive
         {
             get { return _isActive; }
             set { _isActive = value; }
         }
-        [PersistentProperty("CountyId")](PersistentProperty(_CountyId_))
+        [PersistentProperty("CountyId")]
         public County County
         {
             get { return _county; }
             set { _county = value; }
         }
-        [PersistentProperty("SettlementType", DbType.Int32)](PersistentProperty(_SettlementType_,-DbType.Int32))
+        [PersistentProperty("SettlementType", DbType.Int32)]
         public SettlementType Type
         {
             get { return _type; }
@@ -210,6 +212,7 @@ All you need is to create the new instance of City, set properties and call _dao
 
 The lib will look an Id (via IPersistent interface) and if it is 0 a new City will be created (INSERT stetement) else the lib will generate an UPDATE sql and the row will be updated.
 e.g.:
+
 ```SQL
 INSERT INTO [City](City) ( [Name](Name), [ChangeDate](ChangeDate), [IsActive](IsActive), [CountyId](CountyId), [SettlementType](SettlementType) ) 
 VALUES ( @Name, @ChangeDate, @IsActive, @CountyId, @SettlementType ); select scope_identity()
@@ -218,6 +221,7 @@ VALUES ( @Name, @ChangeDate, @IsActive, @CountyId, @SettlementType ); select sco
 
 The lib prints all db calls in Debug out so you can see all db calls
 e.g.:
+
 ```
 INSERT INTO [State](State) ( [Name](Name) ) VALUES ( @Name ); select scope_identity()
 INSERT INTO [State](State) ( [Name](Name) ) VALUES ( @Name ); select scope_identity()
@@ -232,8 +236,8 @@ Note that the lib caches objects.
 
 
 Use CsUnit to run tests
-[http://www.csUnit.org](http://www.csUnit.org)
+[http://www.csUnit.org] (http://www.csUnit.org)
 And unitRun plug-in may be also helpful
-[http://www.jetbrains.com/unitrun/](http://www.jetbrains.com/unitrun/)
+[http://www.jetbrains.com/unitrun/] (http://www.jetbrains.com/unitrun/)
 
 Thanks.

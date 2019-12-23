@@ -16,9 +16,13 @@ That's it. No complex xml, mapping tools etc.
 * For quickly patching unsupported bloated code projects.
 ----
 # Contents
-[Core Demo Classes Description](Core%20Demo%20Classes%20Description.md) 
+
+[Core Demo Classes Description](Core%20Demo%20Classes%20Description.md)
+
 [Console Demo Description](Console%20Demo%20Description.md) 
+
 [Web Demo Description](Web%20Demo%20Description.md)
+
 
 ## Quick Start Guide
 

@@ -22,7 +22,7 @@ namespace EasyPersist.Core.Attributes
         /// </param>
         ///  <param name="lazy">
         /// Default false. If true the value is not included in the sql request. 
-        /// Usfull for columns with big data inside. 
+        /// Useful for columns with big data inside. 
         /// </param>
         /// <param name="order">SortOrder when an object is loaded in child collections</param>
         [Obsolete("Use PersistentPropertyAttribute(string,DbType, SortOrder,bool) method instead")]
@@ -94,8 +94,7 @@ namespace EasyPersist.Core.Attributes
         /// </summary>
         /// <param name="dbFieldName">Column name in the database</param>
         /// <param name="order">string ASC or DESC</param>
-        public PersistentPropertyAttribute(string dbFieldName, string order)
-            : this(dbFieldName)
+        public PersistentPropertyAttribute(string dbFieldName, string order) : this(dbFieldName)
         {
             Order = order;
         }
@@ -109,7 +108,7 @@ namespace EasyPersist.Core.Attributes
         /// </param>
         /// <param name="lazy">
         /// Default false. If true the value is not included in the sql request. 
-        /// Usfull for columns with big data inside. 
+        /// Useful for columns with big data inside. 
         /// </param>
         public PersistentPropertyAttribute(string dbFieldName, DbType dbType, bool lazy) : this(dbFieldName, dbType)
         {
@@ -133,7 +132,7 @@ namespace EasyPersist.Core.Attributes
         /// <param name="dbFieldName">Column name in the database</param>
         /// <param name="lazy">
         /// Default false. If true the value is not included in the sql request. 
-        /// Usfull for columns with big data inside. 
+        /// Useful for columns with big data inside. 
         /// </param>
         public PersistentPropertyAttribute(string dbFieldName, bool lazy) : this(dbFieldName)
         {
@@ -147,7 +146,7 @@ namespace EasyPersist.Core.Attributes
         /// <param name="dbFieldName">Column name in the database</param>
         /// <param name="lazy">
         /// Default false. If true the value is not included in the sql request. 
-        /// Usfull for columns with big data inside. 
+        /// Useful for columns with big data inside. 
         /// </param>
         /// <param name="dbType">
         /// DbType of the column. 
@@ -184,7 +183,7 @@ namespace EasyPersist.Core.Attributes
 
         public bool Lazy { get; private set; }
 
-        public override String ToString()
+        public override string ToString()
         {
             return "Persistent Property";
         }

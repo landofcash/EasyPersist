@@ -103,6 +103,7 @@ GO
 CREATE TABLE [dbo].[TempPersistentAlone](
 	[TempPersistentAloneId] [int] IDENTITY(1,1) NOT NULL,
 	[Name] [nvarchar](max) NULL,
+	[Name With Space] [nvarchar](max) NULL,
 	[IntNullable] [int] NULL,
 	[Date] [datetime] NULL,
  CONSTRAINT [PK_TempPersistentAlone] PRIMARY KEY CLUSTERED 

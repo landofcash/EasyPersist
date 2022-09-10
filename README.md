@@ -12,10 +12,6 @@ That's it. No complex xml, mapping tools etc,
 * For projects where you want to use native SQL queries but also simplify save/update/load of data objects.
 * For quickly patching unsupported bloated code projects.
 ----
-## Contents
-[Core Demo Classes Description](Core-Demo-Classes-Description) 
-[Console Demo Description](Console-Demo-Description) 
-[Web Demo Description](Web-Demo-Description)
 
 ## Quick Start Guide
 

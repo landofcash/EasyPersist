@@ -19,24 +19,20 @@ namespace EasyPersist.Core.Attributes {
             Type persistentType,
             string persistentTypeLinkTable,
             string persistentTypeLinkTableJoinFieldName) : base(dbFieldName, persistentType) {
-            if (string.Compare(dbFieldName, persistentTypeLinkTableJoinFieldName,
-                StringComparison.OrdinalIgnoreCase) == 0){
-                    throw new CommonEasyPersistException("Can't create PersistentCollectionManyToManyAttribute " +
-                                                         "with same left and right side linkage key column." +
-                                                         " (check the first and last parameters you pass into the constructor)");
+            if (string.Compare(dbFieldName, persistentTypeLinkTableJoinFieldName, StringComparison.OrdinalIgnoreCase) == 0){
+                throw new CommonEasyPersistException("Can't create PersistentCollectionManyToManyAttribute " +
+                                                     "with same left and right side linkage key column." +
+                                                     " (check the first and last parameters you pass into the constructor)");
             }
-            
-                LinkTable=persistentTypeLinkTable;
-                LinkTableJoinFieldName=persistentTypeLinkTableJoinFieldName;
-            }
+            LinkTable=persistentTypeLinkTable;
+            LinkTableJoinFieldName=persistentTypeLinkTableJoinFieldName;
+        }
 
         public string LinkTable { get; private set; }
         public string LinkTableJoinFieldName { get; private set; }
 
-        public override String ToString() {
+        public override string ToString() {
             return "Persistent Many-to-Many Collection";
         }
-
     }
 }
-

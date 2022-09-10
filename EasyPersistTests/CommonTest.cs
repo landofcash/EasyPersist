@@ -40,6 +40,7 @@ namespace EasyPersist.Tests {
             DataBaseObjectsFactorySQLServer dbo = new DataBaseObjectsFactorySQLServer(ConnectionSting);
             TempPersistentAlone temp = new TempPersistentAlone();
             temp.Name = "Name Of TempPersistentAlone";
+            temp.NameWithSpace = "Name With Space Value";
             temp.DateTime = wdate;
             dbo.SaveOrUpdate(temp);
 
@@ -49,6 +50,14 @@ namespace EasyPersist.Tests {
             Assert.IsNull(temp.IntNullable);
             Assert.AreEqual(wdate, temp.DateTime);
             StringAssert.AreEqualIgnoringCase("Name Of TempPersistentAlone", temp1.Name);
+            StringAssert.AreEqualIgnoringCase("Name With Space Value", temp1.NameWithSpace);
+            temp1.NameWithSpace = "Changed.";
+            dbo.SaveOrUpdate(temp1);
+
+            dbo = new DataBaseObjectsFactorySQLServer(ConnectionSting);
+            TempPersistentAlone temp2 = dbo.getFromDb<TempPersistentAlone>(temp.Id);
+            StringAssert.AreEqualIgnoringCase("Changed.", temp2.NameWithSpace);
+
         }
         [Test]
         public void SaveWithChildTest() {

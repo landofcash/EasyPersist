@@ -2,7 +2,7 @@ using System;
 
 namespace EasyPersist.Core.Attributes {
     /// <summary>
-    /// Marks a persistent collection of childs.
+    /// Marks a persistent collection of child.
     /// Many-to-one collection 
     /// </summary>
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
@@ -22,7 +22,7 @@ namespace EasyPersist.Core.Attributes {
         /// </summary>
         public Type PersistentType { get; private set; }
 
-        public override String ToString() {
+        public override string ToString() {
             return "Persistent Collection";
         }
 

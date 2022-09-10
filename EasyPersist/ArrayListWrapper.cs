@@ -6,7 +6,7 @@ using EasyPersist.Core.IFaces;
 
 namespace EasyPersist.Core {
     /// <summary>
-    /// A wrapper for lasy collections
+    /// A wrapper for lazy collections
     /// </summary>
     public class ArrayListWrapper : ArrayList {
 		private readonly IList<LazySubCollection> _lazySubCollections = new List<LazySubCollection>();
@@ -28,11 +28,11 @@ namespace EasyPersist.Core {
 			
         } 
 		/// <summary>
-		/// добавляет часть коллекции с однотипными элементами
+        /// Adds a part of collection with similar elements
 		/// </summary>
-		/// <param name="pca">Атрибут коллекции</param>
-		/// <param name="parent">Родительский обьект</param>
-		/// <param name="listObjectTypes">Тип обьектов в этой суб коллекции</param>
+		/// <param name="pca">Collection attribute</param>
+		/// <param name="parent">Parent object</param>
+		/// <param name="listObjectTypes">Object typ in this sub collection</param>
 		public void addSubCollection(PersistentCollectionAttribute pca,IPersistent parent,
             Type listObjectTypes){
 			LazySubCollection lsc = new LazySubCollection(pca, parent, listObjectTypes);
@@ -61,7 +61,7 @@ namespace EasyPersist.Core {
                 return base[index];
             }
             set {
-                //TODO как сохранять значения?
+                //TODO how to save values?
                 base[index] = value;
             }
         }
@@ -276,7 +276,7 @@ namespace EasyPersist.Core {
 			{
 				return base.ToString();
 			}
-		    return "Unitialized Lazy Collection";
+		    return "Uninitialized Lazy Collection";
 		}
 
         /// <summary>
@@ -291,12 +291,11 @@ namespace EasyPersist.Core {
         {
             if(item==null)
             {
-                return arrayList.Contains(item);
+                return arrayList.Contains(null);
             }
             foreach (object o in arrayList)
             {
-                IPersistent persistentObj = o as IPersistent;
-                if (persistentObj!=null)
+                if (o is IPersistent persistentObj)
                 {
                     if(persistentObj.Id==item.Id && persistentObj.GetType()==item.GetType())
                     {
@@ -308,8 +307,8 @@ namespace EasyPersist.Core {
         }
         
 		/// <summary>
-		/// Объект для представления описания части общей коллекци однотиплых элементов 
-		/// Для получения объектов хранящихся в определенной таблице в базе
+        /// Class to describe a part of the main collection of the same type elements
+		/// To get objects stored in a specific table in db
 		/// </summary>
 		private class LazySubCollection {
 			private IPersistent _parent;

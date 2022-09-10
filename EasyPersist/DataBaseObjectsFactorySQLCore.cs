@@ -1,69 +1,87 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Reflection;
-using System.Text;
-using EasyPersist.Core.Attributes;
-using EasyPersist.Core.Exceptions;
-using EasyPersist.Core.IFaces;
-using NLog;
-
 namespace EasyPersist.Core {
+    using System;
+    using System.Collections.Generic;
+    using System.Data;
+    using System.Reflection;
+    using System.Text;
+    using EasyPersist.Core.Attributes;
+    using EasyPersist.Core.Exceptions;
+    using EasyPersist.Core.IFaces;
+    using Microsoft.Extensions.Logging;
+
     public abstract class DataBaseObjectsFactorySQLCore : DataBaseObjectsFactoryBase {
-        private readonly Logger LOGGER = LogManager.GetLogger("DataBaseObjectsFactorySQLCore");
+        //private readonly Logger LOGGER = LogManager.GetLogger("DataBaseObjectsFactorySQLCore");
+        
+        private readonly ILogger LOGGER;
 
         private readonly Dictionary<PropertyInfo, Object[]> propertyCustomAttributes = new Dictionary<PropertyInfo, object[]>();
         
         /// <summary>
-        /// Определяет Имя колонки ИД у IPersistent обьекта
+        /// Gets the ID column name of IPersistent object
         /// </summary>
-        /// <param name="persistent">Обьект у которого определять</param>
-        /// <returns>имя колонки Id (из атрибута)</returns>
+        /// <param name="persistent">object to get the Id for</param>
+        /// <returns>name of the Id column</returns>
         protected string IdColumnName(IPersistent persistent) {
             return IdColumnName(persistent.GetType());
         }
 
         /// <summary>
-        /// Определяет Имя колонки ИД у типа тмплементирующего IPersistent 
+        /// Gets the ID column name of IPersistent object
         /// </summary>
-        /// <param name="persistentType">Тип имплементирующий IPersistent у которого опеределять</param>
-        /// <returns>имя колонки Id (из атрибута)</returns>
+        /// <param name="persistentType">Class that implements IPersistent to get ID column name for</param>
+        /// <returns>ame of the Id column</returns>
         private string IdColumnName(Type persistentType) {
             PropertyInfo propertyInfo = persistentType.GetProperty("Id");
-            Object[] idAttributes = propertyInfo.GetCustomAttributes(typeof(PersistentPropertyAttribute), true);
-            if (idAttributes.Length != 1) {
-                LOGGER.Log(LogLevel.Error, "Too many IPersistent Attributes with property: Id");
-                throw new CommonEasyPersistException("Too many IPersistent Attributes with property: Id");
+            if (propertyInfo==null)
+            {
+                string message = "Can't find property: Id";
+                LOGGER.Log(LogLevel.Error,message );
+                throw new CommonEasyPersistException(message);
+            }
+            object[] idAttributes = propertyInfo.GetCustomAttributes(typeof(PersistentPropertyAttribute), true);
+            if (idAttributes.Length > 1)
+            {
+                string message = "Too many IPersistent Attributes with property: Id";
+                LOGGER.Log(LogLevel.Error,message );
+                throw new CommonEasyPersistException(message);
+            }
+            if (idAttributes.Length < 1)
+            {
+                string message = "No IPersistent Attributes with property: Id";
+                LOGGER.Log(LogLevel.Error,message );
+                throw new CommonEasyPersistException(message);
             }
             PersistentPropertyAttribute persistentPropertyAttribute = (PersistentPropertyAttribute) idAttributes[0];
             string idColumnName = "["+persistentPropertyAttribute.DbFieldName+"]";
             return idColumnName;
         }
         /// <summary>
-        /// Определяет Название таблицы для свойства
+        /// Gets the table name for type
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
         public string GetTableName(Type type)
         {
-            //определяем название таблицы и делаем правильное название св-ва
             Object[] classAttributes = type.GetCustomAttributes(typeof(PersistentClassAttribute), false);
             if (classAttributes.Length > 1) {
-                LOGGER.Log(LogLevel.Error, "Too many PersistentClassAttributes for class:" + type.Name);
-                throw new CommonEasyPersistException("Too many PersistentClassAttributes for class:" + type.Name);
+                string message = "Too many PersistentClassAttributes for class:" + type.Name;
+                LOGGER.Log(LogLevel.Error, message);
+                throw new CommonEasyPersistException(message);
             }
-            if (classAttributes.Length == 1) {
-                PersistentClassAttribute persistentClassAttribute = (PersistentClassAttribute)classAttributes[0];
-                string[] items = persistentClassAttribute.DbTableName.Split('.');
-                var result = "";
-                foreach (var item in items)
-                {
-                    result += "[" + item + "].";
-                }
-                return result.Trim('.');
+            if (classAttributes.Length < 1)
+            {
+                string message = "Cant find PersistentClassAttributes for class:" + type.Name;
+                LOGGER.Log(LogLevel.Error, message);
+                throw new CommonEasyPersistException(message);    
             }
-            LOGGER.Log(LogLevel.Error, "Cant find PersistentClassAttributes for class:" + type.Name);
-            throw new CommonEasyPersistException("Cant find PersistentClassAttributes for class:" + type.Name);
+            PersistentClassAttribute persistentClassAttribute = (PersistentClassAttribute)classAttributes[0];
+            string[] items = persistentClassAttribute.DbTableName.Split('.');
+            var result = "";
+            foreach (var item in items)
+            {
+                result += "[" + item + "].";
+            }
+            return result.Trim('.');
         }
         
         /// <summary>
@@ -75,11 +93,11 @@ namespace EasyPersist.Core {
         protected string PrepareSelectSql(Type persistentType, bool lazy) {
             StringBuilder selectQuery = new StringBuilder("SELECT ");
             PropertyInfo[] propertyInfos = persistentType.GetProperties();
-            //цикл по свойствам обьекта
+            //loop object properties
             foreach (PropertyInfo pi in propertyInfos) {
-                //Массив всех атрибутов у свойства
-                Object[] customAttributes = pi.GetCustomAttributes(typeof(PersistentPropertyAttribute), true);
-                //делаем из атрибута строку
+                //array of all attributes of the property
+                object[] customAttributes = pi.GetCustomAttributes(typeof(PersistentPropertyAttribute), true);
+                //create string from attribute
                 if (customAttributes.Length > 1)
                 {
                     string message = "Too many PersistentPropertyAttribute for property:" + pi.Name;
@@ -89,9 +107,9 @@ namespace EasyPersist.Core {
                 if (customAttributes.Length==1)
                 {
                     PersistentPropertyAttribute persistentPropertyAttribute = (PersistentPropertyAttribute)customAttributes[0];
-                    //Если нашли нужный атрибут то парсим в строку запроса
+                    //if the right attribute found then parse into query string
                     if (!(lazy && persistentPropertyAttribute.Lazy) && persistentPropertyAttribute.GetType() == typeof(PersistentPropertyAttribute)) {
-                        //определяем название таблицы и делаем правильное название св-ва
+                        //get the table name and create the property query string
                         selectQuery.Append(GetTableName(pi.DeclaringType)).Append(".[")
                                    .Append(persistentPropertyAttribute.DbFieldName).Append("]").Append(",");
                     }
@@ -182,7 +200,7 @@ namespace EasyPersist.Core {
                 //getting all Property attributes
                 object[] customAttributes = propertyCustomAttributes[pi];
                 //looping over all attributes of current  Property
-                foreach (Object o in customAttributes) {
+                foreach (var o in customAttributes) {
                     //If this property is marked by PersistentPropertyAttribute then we need to fill it from rs
                     if (o.GetType()==typeof(PersistentPropertyAttribute)) {
                         PersistentPropertyAttribute ppa = (PersistentPropertyAttribute)o;
@@ -209,7 +227,7 @@ namespace EasyPersist.Core {
                                             }
                                             else
                                             {
-                                                string message = "Can't find parametrless constructor for type:" + pi.PropertyType.FullName;
+                                                string message = "Can't find parameterless constructor for type:" + pi.PropertyType.FullName;
                                                 LOGGER.Log(LogLevel.Error, message);
                                                 throw new CommonEasyPersistException(message);
                                             }
@@ -220,7 +238,7 @@ namespace EasyPersist.Core {
                                         } else {
                                             ConstructorInfo prop_ci = pi.PropertyType.GetConstructor(new[] { typeof(string) });
                                             if (prop_ci == null) {
-                                                //nulable type
+                                                //nullable type
                                                 object value = dr[dbFieldName];
                                                 if (pi.PropertyType.Name == typeof(Nullable<>).Name)
                                                 {
@@ -253,7 +271,7 @@ namespace EasyPersist.Core {
                                 } catch (Exception e)
                                 {
                                     string message = "Exception loading object. FieldName:" + dbFieldName + " Property:" + pi.Name;
-                                    LOGGER.LogException(LogLevel.Error, message, e);
+                                    LOGGER.Log(LogLevel.Error, message, e);
                                     throw new CommonEasyPersistException(message, e);
                                 }
                                 //going to the next attribute
@@ -261,7 +279,7 @@ namespace EasyPersist.Core {
                             }
                         }
                     }
-                        //for the persistent collections
+                    //for the persistent collections
                     else if (o is PersistentCollectionAttribute) {
                         //we create a list wrapper (lazy collection)
                         ArrayListWrapper alw = (ArrayListWrapper)pi.GetValue(persistent, null);
@@ -286,9 +304,9 @@ namespace EasyPersist.Core {
                 if (!propertyCustomAttributes.ContainsKey(pi)) {
                     propertyCustomAttributes.Add(pi, pi.GetCustomAttributes(true));
                 }
-                Object[] customAttributes = propertyCustomAttributes[pi];
+                object[] customAttributes = propertyCustomAttributes[pi];
                 //looping over all attributes of current  Property
-                foreach (Object o in customAttributes) {
+                foreach (object o in customAttributes) {
                     //If this property is marked by PersistentPropertyAttribute then we need to fill it from rs
                     if (o.GetType().Name.Equals("PersistentPropertyAttribute")) {
                         PersistentPropertyAttribute ppa = (PersistentPropertyAttribute)o;
@@ -307,7 +325,7 @@ namespace EasyPersist.Core {
                                         LOGGER.Log(LogLevel.Error, message);
                                         throw new CommonEasyPersistException(message);
                                     }
-                                    ConstructorInfo prop_ci = pi.PropertyType.GetConstructor(new Type[] { typeof(string) });
+                                    ConstructorInfo prop_ci = pi.PropertyType.GetConstructor(new[] { typeof(string) });
                                     if (prop_ci == null) {
                                         //simple type property
                                         pi.SetValue(persistent, dr[dbFieldName], null);
@@ -322,7 +340,7 @@ namespace EasyPersist.Core {
                             } catch (Exception e)
                             {
                                 string message = "Exception loading readonly object. Property:" + pi.Name;
-                                LOGGER.LogException(LogLevel.Error, message,e);
+                                LOGGER.Log(LogLevel.Error, message,e);
                                 throw new CommonEasyPersistException(message, e);
                             }
                             //going to the next attribute
@@ -334,11 +352,11 @@ namespace EasyPersist.Core {
         }
 
         /// <summary>
-        /// Готовим запрос для колекций детей
+        /// Prepare query for child collections
         /// </summary>
-        /// <param name="pca">атрибут колекции там лежат ссылка на парента</param>
-        /// <param name="parent">обьект парент</param>
-        /// <param name="isCountQuery">для запросов подсчитывающих число записей true</param>
+        /// <param name="pca">Collection attribute where the link on parent is.</param>
+        /// <param name="parent">parent object</param>
+        /// <param name="isCountQuery">true -- For queries that count number of records</param>
         /// <returns></returns>
         protected string prepareSelectQueryForChildCollections(PersistentCollectionAttribute pca,
                                                                IPersistent parent,
@@ -377,8 +395,8 @@ namespace EasyPersist.Core {
                 foreach (PropertyInfo pic in collectionElementType.GetProperties()) {
                     //getting all Property attributes
                     
-                    Object[] customAttributes = pic.GetCustomAttributes(true);
-                    foreach (Object customAttribute in customAttributes) {
+                    object[] customAttributes = pic.GetCustomAttributes(true);
+                    foreach (object customAttribute in customAttributes) {
                         if (customAttribute.GetType() == typeof(PersistentPropertyAttribute)) {
                             PersistentPropertyAttribute ppa = (PersistentPropertyAttribute)customAttribute;
                             if (!(isLazy && ppa.Lazy)) {
@@ -392,7 +410,7 @@ namespace EasyPersist.Core {
                         }
                     }
                 }
-                //удаляем запятую
+                //remove comma
                 selectParams = selectParams.Remove(selectParams.Length - 1);
                 string result = selectParams + fromParams + whereParams;
                 if (orderParams != null) {
@@ -427,8 +445,8 @@ namespace EasyPersist.Core {
             if (!isCountQuery) {
                 foreach (PropertyInfo pic in pca.PersistentType.GetProperties()) {
                     //getting all Property attributes
-                    Object[] customAttributes = pic.GetCustomAttributes(true);
-                    foreach (Object customAttribute in customAttributes) {
+                    object[] customAttributes = pic.GetCustomAttributes(true);
+                    foreach (object customAttribute in customAttributes) {
                         if (customAttribute.GetType() == typeof(PersistentPropertyAttribute)) {
                             PersistentPropertyAttribute ppa = (PersistentPropertyAttribute)customAttribute;
                             if (!(isLasy && pca.Lazy)) {
@@ -436,14 +454,14 @@ namespace EasyPersist.Core {
                             }
                             if (ppa.Order != null) {
                                 orderParams = orderParams == null ? " ORDER BY " : ", ";
-                                //TODO Добавить порядок добавления ордеров в конечный список
+                                //TODO Add order of adding orders into the final list
                                 orderParams += GetTableName(pca.PersistentType) + ".[" + ppa.DbFieldName + "] ";
                                 orderParams += ppa.Order;
                             }
                         }
                     }
                 }
-                //удаляем запятую
+                //remove comma
                 selectParams = selectParams.Remove(selectParams.Length - 1);
             }
             string result = selectParams + fromParams + whereParams;

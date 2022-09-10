@@ -1,34 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyPersist.Core", "EasyPersist\EasyPersist.Core.csproj", "{4D2468E4-C311-460E-8489-CDF9459E002E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyPersistTests", "EasyPersistTests\EasyPersistTests.csproj", "{329C9C54-FE1E-408A-9ABB-E6971392C2F1}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyPersistDemo", "EasyPersistDemo\EasyPersistDemo\EasyPersistDemo.csproj", "{1E1782CD-B91C-49C8-8571-70BDB18F79FC}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EasyPersistDemoCore", "EasyPersistDemoCore\EasyPersistDemoCore.csproj", "{B11CDF6D-9119-4676-B1C2-92F60E73D2C6}"
-EndProject
-Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "EasyPersistDemoSite", "EasyPersistDemoSite\EasyPersistDemoSite\", "{135FBDA1-382D-4A91-A77D-A7C4B0A9B434}"
-	ProjectSection(WebsiteProperties) = preProject
-		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.0"
-		ProjectReferences = "{4d2468e4-c311-460e-8489-cdf9459e002e}|EasyPersist.Core.dll;{B11CDF6D-9119-4676-B1C2-92F60E73D2C6}|EasyPersistDemoCore.dll;"
-		Debug.AspNetCompiler.VirtualPath = "/EasyPersistDemoSite"
-		Debug.AspNetCompiler.PhysicalPath = "EasyPersistDemoSite\EasyPersistDemoSite\"
-		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\EasyPersistDemoSite\"
-		Debug.AspNetCompiler.Updateable = "true"
-		Debug.AspNetCompiler.ForceOverwrite = "true"
-		Debug.AspNetCompiler.FixedNames = "false"
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.VirtualPath = "/EasyPersistDemoSite"
-		Release.AspNetCompiler.PhysicalPath = "EasyPersistDemoSite\EasyPersistDemoSite\"
-		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\EasyPersistDemoSite\"
-		Release.AspNetCompiler.Updateable = "true"
-		Release.AspNetCompiler.ForceOverwrite = "true"
-		Release.AspNetCompiler.FixedNames = "false"
-		Release.AspNetCompiler.Debug = "False"
-		VWDPort = "55859"
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,20 +21,11 @@ Global
 		{329C9C54-FE1E-408A-9ABB-E6971392C2F1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{329C9C54-FE1E-408A-9ABB-E6971392C2F1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{329C9C54-FE1E-408A-9ABB-E6971392C2F1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1E1782CD-B91C-49C8-8571-70BDB18F79FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1E1782CD-B91C-49C8-8571-70BDB18F79FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1E1782CD-B91C-49C8-8571-70BDB18F79FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1E1782CD-B91C-49C8-8571-70BDB18F79FC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B11CDF6D-9119-4676-B1C2-92F60E73D2C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B11CDF6D-9119-4676-B1C2-92F60E73D2C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B11CDF6D-9119-4676-B1C2-92F60E73D2C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B11CDF6D-9119-4676-B1C2-92F60E73D2C6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{135FBDA1-382D-4A91-A77D-A7C4B0A9B434}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{135FBDA1-382D-4A91-A77D-A7C4B0A9B434}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{135FBDA1-382D-4A91-A77D-A7C4B0A9B434}.Release|Any CPU.ActiveCfg = Debug|Any CPU
-		{135FBDA1-382D-4A91-A77D-A7C4B0A9B434}.Release|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {57B1A266-50CB-4FDF-9865-60CBB9924751}
 	EndGlobalSection
 EndGlobal

@@ -1,21 +1,40 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using EasyPersist.Core.Attributes;
-using EasyPersist.Core.Cache;
-using EasyPersist.Core.Exceptions;
-using EasyPersist.Core.IFaces;
-using NLog;
-
 namespace EasyPersist.Core {
+    using System;
+    using System.Collections;
+    using System.Collections.Generic;
+    using System.Data;
+    using System.Data.SqlClient;
+    using System.Linq;
+    using System.Reflection;
+    using System.Text;
+    using System.Text.RegularExpressions;
+    using EasyPersist.Core.Attributes;
+    using EasyPersist.Core.Cache;
+    using EasyPersist.Core.Exceptions;
+    using EasyPersist.Core.IFaces;
+    using Microsoft.Extensions.Logging;
+
+    public class EmptyLogger<T>:ILogger<T>
+    {
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        {
+        }
+
+        public bool IsEnabled(LogLevel logLevel)
+        {
+            return false;
+        }
+
+        public IDisposable BeginScope<TState>(TState state)
+        {
+            return null;
+        }
+    }
+
     public class DataBaseObjectsFactorySQLServer : DataBaseObjectsFactorySQLCore
     {
-        private readonly Logger LOGGER = LogManager.GetLogger("DataBaseObjectsFactorySQLServer");
+        private readonly ILogger<DataBaseObjectsFactorySQLServer> LOGGER = new EmptyLogger<DataBaseObjectsFactorySQLServer>();
+        private static readonly Regex alfaNumOnlyRegex = new Regex("[^a-zA-Z0-9]");
 
         private readonly ICache _cache = new SimpleCache();
 
@@ -104,7 +123,7 @@ namespace EasyPersist.Core {
             SqlCommand cmd = GetSqlCommand(selectOfferString);
             cmd.Parameters.AddWithValue("id", id);
             //
-            LOGGER.Log(LogLevel.Info, String.Format("Getting an object with id:{0} SQL:{1}", id, selectOfferString));
+            LOGGER.Log(LogLevel.Information, String.Format("Getting an object with id:{0} SQL:{1}", id, selectOfferString));
             DataTable table = FillTableFromDatabase(cmd);
             if (table.Rows.Count > 0) {
                 createObject(table.Rows[0], persistent, alreadyLoaded, lazy);
@@ -142,7 +161,7 @@ namespace EasyPersist.Core {
         }
 
         public virtual IPersistent getFromDb(int id, Type objectType, bool lazy = true) {
-            //Пытаемся заюзать дефолтный конструктор
+            //trying to use default constructor
             ConstructorInfo persistentConstructor = objectType.GetConstructor(
                 BindingFlags.Instance | BindingFlags.Public,
                 null,
@@ -155,7 +174,7 @@ namespace EasyPersist.Core {
             }
             Object[] parameters = new Object[0];
             Object p = persistentConstructor.Invoke(parameters);
-            //Создаем объект типа IPersistent используя дефалтный конструктор
+            //creating object of type IPersistent using default constructor
             IPersistent persistent = (IPersistent)p;
             getFromDb(id, ref persistent,lazy);
             return persistent;
@@ -198,20 +217,20 @@ namespace EasyPersist.Core {
             return getListFromDb(table, collectionObjectsClass, new List<IPersistent>());
         }
         /// <summary>
-        ///		Создает обьекты заданного типа из строк DataTable
+        ///		creates object of the specified type from the DataTable
         /// </summary>
-        /// <param name="table">таблица с данными</param>
-        /// <param name="collectionObjectsClass">тип обьектов которые создавать</param>
-        /// <returns>IList обьектов</returns>    
+        /// <param name="table">table with data</param>
+        /// <param name="collectionObjectsClass">object types to create</param>
+        /// <returns>IList of objects</returns>    
         private IList<IPersistent> getListFromDb(DataTable table, Type collectionObjectsClass, IList<IPersistent> alreadyLoaded) {
             IList<IPersistent> list = new List<IPersistent>();
             foreach (DataRow row in table.Rows) {
-                //Если передли тип который не имплементит IPersistent
+                //if passed type that doesn't implement IPersistent
                 if (collectionObjectsClass.IsAssignableFrom(typeof(IPersistent))) {
                     throw new CommonEasyPersistException("Persistent collection class " + collectionObjectsClass.FullName
                         + " must implement Persistent interface");
                 }
-                //Пытаемся заюзать дефолтный конструктор
+                //trying to use default constructor
                 ConstructorInfo persistentConstructor = collectionObjectsClass.GetConstructor(
                     BindingFlags.Instance | BindingFlags.Public,
                     null,
@@ -224,24 +243,23 @@ namespace EasyPersist.Core {
                 }
                 Object[] parameters = new Object[0];
                 Object p = persistentConstructor.Invoke(parameters);
-                //Создаем объект типа IPersistent используя дефалтный конструктор
+                //creating object of the type IPersistent using default constructor
                 IPersistent persistent = (IPersistent)p;
-                //создаем обьект из строки данных
+                //create object from the data raw
                 createObject(row, persistent, alreadyLoaded, true);
                 list.Add(persistent);
-                //кладем в кеш
                 _cache.Put(persistent);
             }
             return list;
         }
 
         /// <summary>
-        /// Загружает коллекцию объектов из базы данных
+        /// Loads object collection from the database
         /// </summary>
-        /// <param name="pca">Атрибут коллекции</param>
-        /// <param name="parent">Объект родитель</param>
-        /// <param name="collectionObjectsClass">Тип объектов коллекции</param>
-        /// <returns>Коллекция IPersistent обьектов из базы</returns>
+        /// <param name="pca">Collection attribute</param>
+        /// <param name="parent">Parent object</param>
+        /// <param name="collectionObjectsClass">Collection object type</param>
+        /// <returns>Collection of IPersistent objects from DB</returns>
         public override IList<IPersistent> getListFromDb(PersistentCollectionAttribute pca
             , ref IPersistent parent, Type collectionObjectsClass) {
             SqlConnection sqlConnection;
@@ -267,7 +285,7 @@ namespace EasyPersist.Core {
                 foreach (Type type in inherTypes) {
                     if (!type.IsAbstract && !type.IsInterface) {
                         string selectOfferString = prepareSelectQueryForChildCollections(pca, parent, type, false);
-                        LOGGER.Log(LogLevel.Info, String.Format("Loading List SQL:{0}", selectOfferString));
+                        LOGGER.Log(LogLevel.Information, $"Loading List SQL:{selectOfferString}");
                         using (SqlCommand cmd = new SqlCommand(selectOfferString, sqlConnection)) {
                             DataTable table = FillTableFromDatabase(cmd);
                             result.AddRange(getListFromDb(table, type));
@@ -275,8 +293,7 @@ namespace EasyPersist.Core {
                     }
                 }
             } else {
-                throw new CommonEasyPersistException("No PersistentClassAttribute for class:"
-                                                     + baseCollectionElementType.Name);
+                throw new CommonEasyPersistException("No PersistentClassAttribute for class:" + baseCollectionElementType.Name);
             }
             return result;
         }
@@ -284,11 +301,11 @@ namespace EasyPersist.Core {
         /// <summary>
         /// Gets a collection of objects from db 
         /// </summary>
-        /// <param name="cmd">SqlCommand запрс к базе</param>
+        /// <param name="cmd">SqlCommand db query</param>
         /// <param name="collectionObjectsClass">Objects that will be restored from db records</param>
-        /// <returns> Ilist of collectionObjectsClass Objects</returns>
+        /// <returns> IList of collectionObjectsClass Objects</returns>
         public virtual IList<IPersistent> getListFromDb(SqlCommand cmd, Type collectionObjectsClass) {
-            LOGGER.Log(LogLevel.Info, String.Format("Loading List SQL:{0}", cmd.CommandText));
+            LOGGER.Log(LogLevel.Information, $"Loading List SQL:{cmd.CommandText}");
             DataTable table = FillTableFromDatabase(cmd);
             return getListFromDb(table, collectionObjectsClass);
         }
@@ -297,7 +314,7 @@ namespace EasyPersist.Core {
         /// Gets a collection of objects from db 
         /// </summary>
         /// <typeparam name="T">Typeof IPersistent object to return </typeparam>
-        /// <param name="cmd">SQL Sommand</param>
+        /// <param name="cmd">SQL Command</param>
         /// <returns>List of objects</returns>
         public virtual List<T> getListFromDb<T>(SqlCommand cmd) where T : IPersistent
         {
@@ -312,9 +329,9 @@ namespace EasyPersist.Core {
         /// <param name="cmd">SqlCommand запрс к базе</param>
         /// <param name="collectionObjectsClass">Objects that will be restored from db records</param>
         /// <param name="alreadyLoaded">Already Loaded objects</param>
-        /// <returns> Ilist of collectionObjectsClass Objects</returns>
+        /// <returns> IList of collectionObjectsClass Objects</returns>
         public virtual IList<IPersistent> getListFromDb(SqlCommand cmd, Type collectionObjectsClass, IList<IPersistent> alreadyLoaded) {
-            LOGGER.Log(LogLevel.Info, String.Format("Loading List Loaded objects:{0} SQL:{1}", alreadyLoaded.Count, cmd.CommandText));
+            LOGGER.Log(LogLevel.Information, $"Loading List Loaded objects:{alreadyLoaded.Count} SQL:{cmd.CommandText}");
             DataTable table = FillTableFromDatabase(cmd);
             return getListFromDb(table, collectionObjectsClass, alreadyLoaded);
         }
@@ -340,9 +357,9 @@ namespace EasyPersist.Core {
         /// Gets a collection of objects from db 
         /// </summary>
         /// <typeparam name="T">Typeof IPersistent object to return </typeparam>
-        /// <param name="cmd">SQL Sommand</param>
+        /// <param name="cmd">SQL Command</param>
         /// <returns>List of objects</returns>
-        public virtual List<T> getListFromDb<T>(String sql) where T : IPersistent
+        public virtual List<T> getListFromDb<T>(string sql) where T : IPersistent
         {
             IList<IPersistent> items = getListFromDb(sql, typeof (T));
             List<T> result = items.Cast<T>().ToList();
@@ -352,10 +369,10 @@ namespace EasyPersist.Core {
         /// <summary>
         /// Gets a collection of objects from db 
         /// </summary>
-        /// <param name="sql">Sql запрс к базе</param>
+        /// <param name="sql">Sql query to dbе</param>
         /// <param name="collectionObjectsClass">Objects that will be restored from db records</param>
-        /// <returns> Ilist of collectionObjectsClass Objects</returns>
-        public virtual IList<IPersistent> getListFromDb(String sql, Type collectionObjectsClass) {
+        /// <returns> IList of collectionObjectsClass Objects</returns>
+        public virtual IList<IPersistent> getListFromDb(string sql, Type collectionObjectsClass) {
             SqlCommand cmd = new SqlCommand(sql);
             cmd.CommandTimeout = CommandTimeout;
             return getListFromDb(cmd, collectionObjectsClass);
@@ -366,16 +383,16 @@ namespace EasyPersist.Core {
         /// <param name="sql">Sql запрс к базе</param>
         /// <param name="collectionObjectsClass">Objects that will be restored from db records</param>
         /// <param name="alreadyLoaded">Already Loaded objects</param>
-        /// <returns> Ilist of collectionObjectsClass Objects</returns>
+        /// <returns> IList of collectionObjectsClass Objects</returns>
         public virtual IList<IPersistent> getListFromDb(String sql, Type collectionObjectsClass, IList<IPersistent> alreadyLoaded) {
-            LOGGER.Log(LogLevel.Info, String.Format("Loading List Loaded objects:{0} SQL:{1}", alreadyLoaded.Count, sql));
+            LOGGER.Log(LogLevel.Information, $"Loading List Loaded objects:{alreadyLoaded.Count} SQL:{sql}");
             SqlCommand cmd = new SqlCommand(sql);
             cmd.CommandTimeout = CommandTimeout;
             return getListFromDb(cmd, collectionObjectsClass, alreadyLoaded);
         }
         public virtual List<T> GetReadOnlyListFromDb<T>(SqlCommand cmd)
         {
-            LOGGER.Log(LogLevel.Info, String.Format("Loading Read Only List SQL:{0}", cmd.CommandText));
+            LOGGER.Log(LogLevel.Information, $"Loading Read Only List SQL:{cmd.CommandText}");
             ApplayTransaction(cmd);
             DataTable table = FillTableFromDatabase(cmd);
             return GetReadOnlyListFromDb<T>(table);
@@ -385,7 +402,7 @@ namespace EasyPersist.Core {
             List<T> list = new List<T>();
             foreach (DataRow row in table.Rows)
             {
-                //Пытаемся заюзать дефолтный конструктор
+                //trying to use default constructor
                 ConstructorInfo persistentConstructor = typeof(T).GetConstructor(
                     BindingFlags.Instance | BindingFlags.Public,
                     null,
@@ -397,9 +414,8 @@ namespace EasyPersist.Core {
                 {
                     throw new CommonEasyPersistException("Can't find default constructor in class " + typeof(T).FullName);
                 }
-                Object[] parameters = new Object[0];
+                object[] parameters = new object[0];
                 T obj = (T)persistentConstructor.Invoke(parameters);
-                //создаем обьект из строки данных
                 CreateReadOnlyObject(row, obj);
                 list.Add(obj);
             }
@@ -414,7 +430,7 @@ namespace EasyPersist.Core {
         /// <returns></returns>
         [Obsolete("Use Generic GetReadOnlyListFromDb")]
         public virtual ArrayList GetReadOnlyListFromDb(SqlCommand cmd, Type collectionObjectsClass) {
-            LOGGER.Log(LogLevel.Info, String.Format("Loading Read Only List SQL:{0}", cmd.CommandText));
+            LOGGER.Log(LogLevel.Information, $"Loading Read Only List SQL:{cmd.CommandText}");
             ApplayTransaction(cmd);
             DataTable table = FillTableFromDatabase(cmd);
             return GetReadOnlyListFromDb(table, collectionObjectsClass);
@@ -431,7 +447,6 @@ namespace EasyPersist.Core {
         public virtual ArrayList GetReadOnlyListFromDb(DataTable table, Type collectionObjectsClass) {
             ArrayList list = new ArrayList();
             foreach (DataRow row in table.Rows) {
-                //Пытаемся заюзать дефолтный конструктор
                 ConstructorInfo persistentConstructor = collectionObjectsClass.GetConstructor(
                     BindingFlags.Instance | BindingFlags.Public,
                     null,
@@ -442,9 +457,8 @@ namespace EasyPersist.Core {
                 if (persistentConstructor == null) {
                     throw new CommonEasyPersistException("Can't find default constructor in class " + collectionObjectsClass.FullName);
                 }
-                Object[] parameters = new Object[0];
-                Object obj = persistentConstructor.Invoke(parameters);
-                //создаем обьект из строки данных
+                var parameters = new object[0];
+                object obj = persistentConstructor.Invoke(parameters);
                 CreateReadOnlyObject(row, obj);
                 list.Add(obj);
             }
@@ -495,33 +509,32 @@ namespace EasyPersist.Core {
             if (persistent == null) {
                 throw new CommonEasyPersistException("Can't save null in db");
             }
-            //Если есть ID то апдейтим
+            //Update if ID exists
             if (persistent.Id != 0) {
                 update = true;
             }
             if (!update && persistent is ILazy && !((ILazy)persistent).Initialized) {
-                throw new LazyAccessException("Can't save an object wich is lazy and not initialized.");
+                throw new LazyAccessException("Can't save an object which is lazy and not initialized.");
             }
-            ///Стек где храним типы родителей этого обьекта
+            ///Parent types stack
             Stack<Type> stack = new Stack<Type>();
             Type type = persistent.GetType();
             while (type != null && type != typeof(object) && typeof(IPersistent).IsAssignableFrom(type)) {
                 stack.Push(type);
                 type = type.BaseType;
-
             }
 
             foreach (Type typeFromStack in stack) {
                 SqlCommand updateCommand = GetUpdateCommandWithParameters(typeFromStack, persistent, transaction);
-                //TODO вынести это дерьмо в предыдущий цикл
+                //TODO probably move into loop above
                 //Creating SQL queries
                 //For insert
-                String updateCommandText;
+                string updateCommandText;
                 if (!update) {
                     StringBuilder dbNames = new StringBuilder("");
                     StringBuilder dbValues = new StringBuilder("");
                     for (int i = 0; i < updateCommand.Parameters.Count; i++) {
-                        dbNames.Append("[").Append(updateCommand.Parameters[i].ParameterName).Append("]");
+                        dbNames.Append("[").Append(updateCommand.Parameters[i].SourceColumn).Append("]");
                         dbValues.Append("@").Append(updateCommand.Parameters[i].ParameterName);
                         if (i + 1 < updateCommand.Parameters.Count) {
                             dbNames.Append(", ");
@@ -534,7 +547,7 @@ namespace EasyPersist.Core {
                     //for update
                     StringBuilder dbNamesValues = new StringBuilder("");
                     for (int i = 0; i < updateCommand.Parameters.Count; i++) {
-                        dbNamesValues.Append("[").Append(updateCommand.Parameters[i].ParameterName)
+                        dbNamesValues.Append("[").Append(updateCommand.Parameters[i].SourceColumn)
                         .Append("]=@").Append(updateCommand.Parameters[i].ParameterName);
                         if (i + 1 < updateCommand.Parameters.Count) {
                             dbNamesValues.Append(", ");
@@ -550,21 +563,21 @@ namespace EasyPersist.Core {
                         updateCommand.Connection.Open();
                     }
                     if (update) {
-                        LOGGER.Log(LogLevel.Info, String.Format("Updating an object with id:{0} SQL:{1}", persistent.Id, updateCommandText));
-                        LOGGER.Log(LogLevel.Info, updateCommand.Parameters.ToString());
+                        LOGGER.Log(LogLevel.Information, $"Updating an object with id:{persistent.Id} SQL:{updateCommandText}");
+                        LOGGER.Log(LogLevel.Information, updateCommand.Parameters.ToString());
                         updateCommand.ExecuteNonQuery();
                     } else {
-                        LOGGER.Log(LogLevel.Info, String.Format("Inserting an object with id:{0} SQL:{1}", persistent.Id, updateCommandText));
-                        LOGGER.Log(LogLevel.Info, updateCommand.Parameters.ToString());
+                        LOGGER.Log(LogLevel.Information, $"Inserting an object with id:{persistent.Id} SQL:{updateCommandText}");
+                        LOGGER.Log(LogLevel.Information, updateCommand.Parameters.ToString());
                         object result = updateCommand.ExecuteScalar();
                         if (result != null && result != DBNull.Value) {
                             if (persistent.Id == 0)//for inheritance
                             {
-                                persistent.Id = Decimal.ToInt32((decimal) result);
+                                persistent.Id = decimal.ToInt32((decimal) result);
                             }
                         }
                     }
-                    LOGGER.Log(LogLevel.Info, updateCommand.CommandText);
+                    LOGGER.Log(LogLevel.Information, updateCommand.CommandText);
                 } catch (Exception exception) {
                     foreach (SqlParameter sqlParameter in updateCommand.Parameters) {
                         LOGGER.Log(LogLevel.Error, sqlParameter.ParameterName + "=" + sqlParameter.Value);
@@ -580,39 +593,40 @@ namespace EasyPersist.Core {
             updateCommand.Connection = transaction.Connection;
             updateCommand.Transaction = transaction;
             updateCommand.CommandTimeout = CommandTimeout;
-            //для лези определят инициализирован ли обьект для не лези всегда false
+            //for lasy checks if initialized object, for not lazy always is false
             bool isInitialized = persistent is ILazy && ((ILazy)persistent).Initialized;
-            //цикл по свойствам обьекта
+            //loop object properties
             foreach (PropertyInfo pi in type.GetProperties(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public)) {
-                Object[] customAttributes = pi.GetCustomAttributes(false);
-                //цикл по атрибутам свойства
-                foreach (Object o in customAttributes) {
+                object[] customAttributes = pi.GetCustomAttributes(false);
+                //loop property attributes
+                foreach (object o in customAttributes) {
                     if (o.GetType() == typeof(PersistentPropertyAttribute) && pi.Name != "Id") {
                         PersistentPropertyAttribute ppa = (PersistentPropertyAttribute)o;
-                        if ((ppa.Lazy && isInitialized) || !ppa.Lazy) {//Добавляем только если не лези либо инициализирован
-                            String dbFieldName = ppa.DbFieldName;
+                        if ((ppa.Lazy && isInitialized) || !ppa.Lazy) {//add only if not lazy or not initialized
+                            string dbFieldName = ppa.DbFieldName;
                             SqlParameter sqlParameter = new SqlParameter();
                             sqlParameter.DbType = ppa.DbType;
                             sqlParameter.IsNullable = true;
-                            sqlParameter.ParameterName = dbFieldName;
-                            //если не обьект (не кастится к IPersistent)
+                            sqlParameter.ParameterName = alfaNumOnlyRegex.Replace(dbFieldName, "_");
+                            sqlParameter.SourceColumn = dbFieldName;
+                            //in not object (doesn't implement IPersistent)
                             if (!typeof(IPersistent).IsAssignableFrom(pi.PropertyType)) {
                                 sqlParameter.Value = pi.GetValue(persistent, null);
                                 if (sqlParameter.Value == null) {
                                     sqlParameter.Value = DBNull.Value;
                                 } else if (sqlParameter.DbType == DbType.DateTime) {
-                                    //замена мин даты на нулл
+                                    //change min date to null
                                     if (((DateTime)sqlParameter.Value) == DateTime.MinValue) {
                                         sqlParameter.Value = DBNull.Value;
                                     }
                                 } else if (sqlParameter.DbType == DbType.AnsiString) {
-                                    //серилизуем в строку это наверно переделать
+                                    //serialize into string, probably change this later???
                                     sqlParameter.Value = sqlParameter.Value.ToString();
                                 }
                             } else {
-                                IPersistent linkedPersistant = (IPersistent)pi.GetValue(persistent, null);
-                                if (linkedPersistant != null) {
-                                    sqlParameter.Value = linkedPersistant.Id;
+                                IPersistent linkedPersistent = (IPersistent)pi.GetValue(persistent, null);
+                                if (linkedPersistent != null) {
+                                    sqlParameter.Value = linkedPersistent.Id;
                                 } else {
                                     sqlParameter.Value = DBNull.Value;
                                 }
@@ -620,7 +634,7 @@ namespace EasyPersist.Core {
                             updateCommand.Parameters.Add(sqlParameter);
                         }
                     }
-                    if(o.GetType().Equals(typeof(PersistentCollectionAttribute)))
+                    if(o.GetType() == typeof(PersistentCollectionAttribute))
                     {
                         if (pi.GetValue(persistent,null) == null)
                         {
@@ -632,17 +646,17 @@ namespace EasyPersist.Core {
                 }
             }
             //we add an id in to update parameters collection if needed
-            //добавляем если не нашли в этом типе смойства с именем ID
             if (type.GetProperty("Id", BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public) == null) {
                 PropertyInfo pi = type.GetProperty("Id");
                 PersistentPropertyAttribute ppa =
                    (PersistentPropertyAttribute)pi.GetCustomAttributes(typeof(PersistentPropertyAttribute), false)[0];
-                String dbFieldName = ppa.DbFieldName;
+                string dbFieldName = ppa.DbFieldName;
                 SqlParameter sqlParameter = new SqlParameter();
                 sqlParameter.DbType = ppa.DbType;
                 sqlParameter.IsNullable = true;
-                sqlParameter.ParameterName = dbFieldName;
+                sqlParameter.ParameterName = alfaNumOnlyRegex.Replace(dbFieldName, "_");
                 sqlParameter.Value = pi.GetValue(persistent, null);
+                sqlParameter.SourceColumn = dbFieldName;
                 updateCommand.Parameters.Add(sqlParameter);
             }
             return updateCommand;
@@ -651,7 +665,7 @@ namespace EasyPersist.Core {
         /// <summary>
         /// Saves or updates a persistent in db
         /// If (Id == 0) then Saves!
-        /// it saves only primitive properties (not persistent childs)
+        /// it saves only primitive properties (not persistent child)
         /// </summary>
         /// <param name="persistent">an object to save</param>
         public override void SaveOrUpdate(IPersistent persistent) {
@@ -675,7 +689,7 @@ namespace EasyPersist.Core {
                             transaction.Commit();
                         } catch (Exception e) {
                             transaction.Rollback();
-                            LOGGER.LogException(LogLevel.Error, e.Message, e);
+                            LOGGER.Log(LogLevel.Error, e.Message, e);
                             throw new CommonEasyPersistException("Save or Update Error: " + e.Message, e);
                         }
                     }
@@ -684,7 +698,7 @@ namespace EasyPersist.Core {
         }
 
         /// <summary>
-        /// DELETEs an object
+        /// DELETE object
         /// </summary>
         /// <param name="persistent">Persistent to delete</param>
         public override void DeleteObject(ref IPersistent persistent) {
@@ -713,16 +727,16 @@ namespace EasyPersist.Core {
             persistent = null;
         }
         /// <summary>
-        /// DELETEs an object in a transaction
+        /// DELETE object in a transaction
         /// </summary>
         /// <param name="persistent"></param>
         /// <param name="transaction"></param>
         public virtual void DeleteObject(ref IPersistent persistent, SqlTransaction transaction) {
-            string deleteSql = string.Format("DELETE FROM {0} WHERE {1}=@id", GetTableName(persistent.GetType()), IdColumnName(persistent));
+            string deleteSql = $"DELETE FROM {GetTableName(persistent.GetType())} WHERE {IdColumnName(persistent)}=@id";
             SqlCommand sqlCommand = new SqlCommand(deleteSql, transaction.Connection, transaction);
             sqlCommand.Parameters.AddWithValue("id", persistent.Id);
             sqlCommand.CommandTimeout = CommandTimeout;
-            LOGGER.Log(LogLevel.Info, String.Format("Deleting an object with id:{0} SQL:{1}", persistent.Id, deleteSql));
+            LOGGER.Log(LogLevel.Information, $"Deleting an object with id:{persistent.Id} SQL:{deleteSql}");
             sqlCommand.ExecuteNonQuery();
             _cache.Remove(persistent);
 
@@ -733,7 +747,7 @@ namespace EasyPersist.Core {
         /// (Is used to initialize lazy collection)
         ///usually used to remove extra count query when the collection is not supposed to be empty
         /// </summary>
-        /// <param name="collection">Lazy Colelction ArrayListWrapper</param>
+        /// <param name="collection">Lazy Collection ArrayListWrapper</param>
         public static void InitializeLazyCollection(ArrayList collection) {
             if (collection != null) {
                 if (collection.GetType() == typeof(ArrayListWrapper)) {
@@ -755,9 +769,7 @@ namespace EasyPersist.Core {
                 prop => Attribute.IsDefined(prop, typeof(PersistentCollectionManyToManyAttribute)));
             foreach (PropertyInfo propertyInfo in props)
             {
-                object[] attributes = propertyInfo
-                    .GetCustomAttributes(typeof(PersistentCollectionManyToManyAttribute), false);
-
+                object[] attributes = propertyInfo.GetCustomAttributes(typeof(PersistentCollectionManyToManyAttribute), false);
                 if (attributes.Length != 1)
                 {
                     string message = "Property: " + propertyInfo.Name + " of type:" + parent.GetType()
@@ -857,10 +869,10 @@ namespace EasyPersist.Core {
 
         #region PURE_SQL_HELPER_FUNCTIONS
         /// <summary>
-        /// Вспомогательная функция используется для быстрого запроса к базе обычно при подсчете елементов 
+        /// Helper function to query database usually used to collect elements 
         /// 
         /// </summary>
-        /// <param name="cmd">запрос</param>
+        /// <param name="cmd">query</param>
         /// <returns>(int)cmd.ExecuteScalar();</returns>
         public virtual int CountItems(SqlCommand cmd) {
             SqlConnection sqlConnection = ApplayTransaction(cmd);
@@ -870,7 +882,7 @@ namespace EasyPersist.Core {
             }
             int res;
             try {
-                LOGGER.Log(LogLevel.Info,String.Format("Executing Count Items command SQL:{0}", cmd.CommandText));
+                LOGGER.Log(LogLevel.Information, $"Executing Count Items command SQL:{cmd.CommandText}");
                 res = (int)cmd.ExecuteScalar();
             } finally {
                 if(SqlTransaction==null)
@@ -893,7 +905,7 @@ namespace EasyPersist.Core {
             }
             object res;
             try {
-                LOGGER.Log(LogLevel.Info,String.Format("Executing ExecuteScalar command SQL:{0}", cmd.CommandText));
+                LOGGER.Log(LogLevel.Information, $"Executing ExecuteScalar command SQL:{cmd.CommandText}");
                 res = cmd.ExecuteScalar();
                 cmd.Dispose();
             } catch {
@@ -913,13 +925,13 @@ namespace EasyPersist.Core {
         /// Executes a command in a transaction
         /// </summary>
         /// <param name="cmd">Command to execute</param>
-        /// <param name="transaction">Trunsection to use</param>
+        /// <param name="transaction">Transaction to use</param>
         /// <returns>cmd.ExecuteScalar()</returns>
         public virtual object ExecuteScalar(SqlCommand cmd, SqlTransaction transaction) {
             object res;
             cmd.Transaction = transaction;
             cmd.Connection = transaction.Connection;
-            LOGGER.Log(LogLevel.Info, String.Format("Executing ExecuteScalar command SQL:{0}", cmd.CommandText));
+            LOGGER.Log(LogLevel.Information, $"Executing ExecuteScalar command SQL:{cmd.CommandText}");
             res = cmd.ExecuteScalar();
             cmd.Dispose();
             return res;
@@ -938,12 +950,12 @@ namespace EasyPersist.Core {
             int result;
             try
             {
-                LOGGER.Log(LogLevel.Info, String.Format("Executing ExecuteNonQuery command SQL:{0}", cmd.CommandText));
+                LOGGER.Log(LogLevel.Information, $"Executing ExecuteNonQuery command SQL:{cmd.CommandText}");
                 result = cmd.ExecuteNonQuery();
             }
             catch(Exception ex)
             {
-                LOGGER.LogException(LogLevel.Error, String.Format("Error Executing ExecuteNonQuery :{0}", ex.Message), ex);
+                LOGGER.Log(LogLevel.Error, $"Error Executing ExecuteNonQuery :{ex.Message}", ex);
                 sqlConnection.Close();
                 throw;
             }
@@ -961,25 +973,25 @@ namespace EasyPersist.Core {
             return result;
         }
         /// <summary>
-        ///Executes a query cmd.ExecuteNonQuery() in a custom transaction
+        /// Executes a query cmd.ExecuteNonQuery() in a custom transaction
         /// </summary>
         /// <param name="cmd">SQL command to execute</param>
         /// <returns>The number of rows affected</returns>
         public virtual int ExecuteNonQuery(SqlCommand cmd, SqlTransaction transaction) {
             cmd.Transaction = transaction;
             cmd.Connection = transaction.Connection;
-            LOGGER.Log(LogLevel.Info, String.Format("Executing ExecuteNonQuery command SQL:{0}", cmd.CommandText));
+            LOGGER.Log(LogLevel.Information, $"Executing ExecuteNonQuery command SQL:{cmd.CommandText}");
             int res = cmd.ExecuteNonQuery();
             cmd.Dispose();
             return res;
         }
         /// <summary>
-        /// Executes the command and returns a filld DataTable
+        /// Executes the command and returns a filled DataTable
         /// </summary>
         /// <param name="cmd"></param>
         /// <returns></returns>
         public virtual DataTable GetList(SqlCommand cmd) {
-            LOGGER.Log(LogLevel.Info, String.Format("Executing GetList command SQL:{0}", cmd.CommandText));
+            LOGGER.Log(LogLevel.Information, $"Executing GetList command SQL:{cmd.CommandText}");
             DataTable table = FillTableFromDatabase(cmd);
             cmd.Dispose();
             return table;
@@ -987,7 +999,7 @@ namespace EasyPersist.Core {
         
 
         /// <summary>
-        /// Executs a query. returns the number of rows affected (actually <seealso cref="SqlCommand.ExecuteNonQuery"/> is returned)
+        /// Executes a query. returns the number of rows affected (actually <seealso cref="SqlCommand.ExecuteNonQuery"/> is returned)
         /// 
         /// </summary>
         /// <param name="cmdText">SQL query text</param>

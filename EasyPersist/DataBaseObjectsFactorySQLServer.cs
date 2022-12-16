@@ -14,26 +14,9 @@ namespace EasyPersist.Core {
     using EasyPersist.Core.IFaces;
     using Microsoft.Extensions.Logging;
 
-    public class EmptyLogger<T>:ILogger<T>
-    {
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
-        {
-        }
-
-        public bool IsEnabled(LogLevel logLevel)
-        {
-            return false;
-        }
-
-        public IDisposable BeginScope<TState>(TState state)
-        {
-            return null;
-        }
-    }
-
     public class DataBaseObjectsFactorySQLServer : DataBaseObjectsFactorySQLCore
     {
-        private readonly ILogger<DataBaseObjectsFactorySQLServer> LOGGER = new EmptyLogger<DataBaseObjectsFactorySQLServer>();
+        public ILogger<DataBaseObjectsFactorySQLServer> LOGGER { get; set; } = new EmptyLogger<DataBaseObjectsFactorySQLServer>();
         private static readonly Regex alfaNumOnlyRegex = new Regex("[^a-zA-Z0-9]");
 
         private readonly ICache _cache = new SimpleCache();

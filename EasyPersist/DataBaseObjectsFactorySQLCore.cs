@@ -10,9 +10,8 @@ namespace EasyPersist.Core {
     using Microsoft.Extensions.Logging;
 
     public abstract class DataBaseObjectsFactorySQLCore : DataBaseObjectsFactoryBase {
-        //private readonly Logger LOGGER = LogManager.GetLogger("DataBaseObjectsFactorySQLCore");
-        
-        private readonly ILogger LOGGER;
+
+        public ILogger LOGGER{ get; set; } 
 
         private readonly Dictionary<PropertyInfo, Object[]> propertyCustomAttributes = new Dictionary<PropertyInfo, object[]>();
         

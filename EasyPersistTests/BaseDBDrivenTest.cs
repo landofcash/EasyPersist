@@ -25,7 +25,9 @@ namespace EasyPersist.Tests
             ConnectionSting = "Data Source=" + DBParam.ServerName
                               + ";Initial Catalog=" + DBParam.DatabaseName
                               + ";Persist Security Info=True;User ID=" + DBParam.MasterLogin
-                              + ";Password=" + DBParam.MasterPassword;
+                              + ";Password=" + DBParam.MasterPassword
+                              + ";TrustServerCertificate=True" 
+                              + ";Encrypt=False";
             LoggingConfiguration config = new LoggingConfiguration();
             // Step 2. Create targets and add them to the configuration 
             ColoredConsoleTarget consoleTarget = new ColoredConsoleTarget();

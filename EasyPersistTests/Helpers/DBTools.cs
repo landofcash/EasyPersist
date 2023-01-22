@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Data;
-using System.Data.SqlClient;
 
 namespace EasyPersist.Tests.Helpers
 {
-	public static class DBTools
+    using Microsoft.Data.SqlClient;
+
+    public static class DBTools
 	{
 		/// <summary>
 		/// Creates database
@@ -90,11 +91,13 @@ GO
 
         public string GetConnection()
         {
-            return "SERVER = " + ServerName + "; DATABASE = " + DatabaseName + "; User ID = " + MasterLogin + "; Pwd = " + MasterPassword;
+            return "TrustServerCertificate=True;Encrypt=False;" +
+                   "SERVER = " + ServerName + "; DATABASE = " + DatabaseName + "; User ID = " + MasterLogin + "; Pwd = " + MasterPassword;
         }
         public string GetMasterConnection()
 		{
-			return "SERVER = " + ServerName + "; DATABASE = master; User ID = " + MasterLogin + "; Pwd = " + MasterPassword;
+			return "TrustServerCertificate=True;Encrypt=False;" +
+                   "SERVER = " + ServerName + "; DATABASE = master;User ID = " + MasterLogin + "; Pwd = " + MasterPassword;
 		}
 	}
 

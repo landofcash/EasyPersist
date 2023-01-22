@@ -1,21 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.IO;
-using System.Linq;
-using System.Text;
-using EasyPersist.Tests.Helpers;
-using NUnit.Framework;
-
-namespace EasyPersist.Tests
+﻿namespace EasyPersist.Tests
 {
+    using System;
+    using System.IO;
+    using EasyPersist.Tests.Helpers;
+    using NUnit.Framework;
+    using Microsoft.Data.SqlClient;
+
     [SetUpFixture]
     public class SetupDB : BaseDBDrivenText
     {
         [OneTimeSetUp]
         public void InitDb()
         {
-            
             DBTools.DeleteDatabase(DBParam);
             DBTools.CreateDatabase(DBParam);
             using (SqlConnection sqlConnection = new SqlConnection(DBParam.GetConnection()))
@@ -32,8 +28,6 @@ namespace EasyPersist.Tests
                     SqlScriptHelper.ExecuteScript(sqlConnection, createDBScript);
                 }
             }
-             
         }
     }
-
 }

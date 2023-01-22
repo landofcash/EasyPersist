@@ -11,9 +11,9 @@ namespace EasyPersist.Core {
 
     public abstract class DataBaseObjectsFactorySQLCore : DataBaseObjectsFactoryBase {
 
-        public ILogger LOGGER{ get; set; } 
+        public abstract ILogger LOGGER { get; set; } 
 
-        private readonly Dictionary<PropertyInfo, Object[]> propertyCustomAttributes = new Dictionary<PropertyInfo, object[]>();
+        private readonly Dictionary<PropertyInfo, object[]> propertyCustomAttributes = new Dictionary<PropertyInfo, object[]>();
         
         /// <summary>
         /// Gets the ID column name of IPersistent object

@@ -1,9 +1,11 @@
+// ReSharper disable UnusedMember.Global
+// ReSharper disable MemberCanBeProtected.Global
+// ReSharper disable SuspiciousTypeConversion.Global
 namespace EasyPersist.Core {
     using System;
     using System.Collections;
     using System.Collections.Generic;
     using System.Data;
-    using System.Data.SqlClient;
     using System.Linq;
     using System.Reflection;
     using System.Text;
@@ -12,21 +14,21 @@ namespace EasyPersist.Core {
     using EasyPersist.Core.Cache;
     using EasyPersist.Core.Exceptions;
     using EasyPersist.Core.IFaces;
+    using Microsoft.Data.SqlClient;
     using Microsoft.Extensions.Logging;
 
+    // ReSharper disable once ClassWithVirtualMembersNeverInherited.Global
     public class DataBaseObjectsFactorySQLServer : DataBaseObjectsFactorySQLCore
     {
-        public ILogger<DataBaseObjectsFactorySQLServer> LOGGER { get; set; } = new EmptyLogger<DataBaseObjectsFactorySQLServer>();
+        public override ILogger LOGGER { get; set; } = new EmptyLogger<DataBaseObjectsFactorySQLServer>();
         private static readonly Regex alfaNumOnlyRegex = new Regex("[^a-zA-Z0-9]");
 
         private readonly ICache _cache = new SimpleCache();
 
         public SqlTransaction SqlTransaction { get; set; }
 
-        public ICache Cache
-        {
-            get { return _cache; }
-        }
+        public ICache Cache => _cache;
+
         public DataBaseObjectsFactorySQLServer()
         {
             
@@ -35,6 +37,7 @@ namespace EasyPersist.Core {
         public DataBaseObjectsFactorySQLServer(string sqlConnectionString) {
             SqlConnectionString = sqlConnectionString;
         }
+
         public DataBaseObjectsFactorySQLServer(string sqlConnectionString, ICache cache) {
             SqlConnectionString = sqlConnectionString;
             _cache = cache;
@@ -75,7 +78,7 @@ namespace EasyPersist.Core {
         private SqlCommand GetSqlCommand(string cmdText)
         {
             SqlConnection sqlConnection;
-            SqlCommand cmd = new SqlCommand(cmdText);
+            var cmd = new SqlCommand(cmdText);
             if (SqlTransaction != null)
             {
                 cmd.Transaction = SqlTransaction;
@@ -92,26 +95,26 @@ namespace EasyPersist.Core {
 
         public override void getFromDb(int id, ref IPersistent persistent, IList<IPersistent> alreadyLoaded, bool lazy)
         {
-            Type persistentType = persistent.GetType();
+            var persistentType = persistent.GetType();
             if (lazy)
             {
-                IPersistent cachedItem= GetFromCache(id, persistentType, alreadyLoaded);
+                var cachedItem= GetFromCache(id, persistentType, alreadyLoaded);
                 if (cachedItem != null)
                 {
                     persistent = cachedItem;
                     return; //item from cache returned
                 }
             }
-            String selectOfferString = PrepareSelectSql(persistentType, lazy);
-            SqlCommand cmd = GetSqlCommand(selectOfferString);
+            var selectOfferString = PrepareSelectSql(persistentType, lazy);
+            var cmd = GetSqlCommand(selectOfferString);
             cmd.Parameters.AddWithValue("id", id);
             //
-            LOGGER.Log(LogLevel.Information, String.Format("Getting an object with id:{0} SQL:{1}", id, selectOfferString));
-            DataTable table = FillTableFromDatabase(cmd);
+            LOGGER.Log(LogLevel.Information, $"Getting an object with id:{id} SQL:{selectOfferString}");
+            var table = FillTableFromDatabase(cmd);
             if (table.Rows.Count > 0) {
                 createObject(table.Rows[0], persistent, alreadyLoaded, lazy);
                 if (lazy) {
-                    _cache.Put(persistent); //кладем в кеш
+                    _cache.Put(persistent);
                 }
             } else {
                 persistent = null;
@@ -127,9 +130,9 @@ namespace EasyPersist.Core {
         /// <returns>an object from cache or null if not found</returns>
         private IPersistent GetFromCache(int id, Type persistentType, IList<IPersistent> localCache)
         {
-            //TODO: change local cache to a dicionary key: table name
+            //TODO: change local cache to a dictionary key: table name
             //Check Global Cache
-            IPersistent cachedPersistent = _cache.Get(id, persistentType);
+            var cachedPersistent = _cache.Get(id, persistentType);
             if (cachedPersistent != null)
             {
                 return cachedPersistent;
@@ -137,7 +140,7 @@ namespace EasyPersist.Core {
             //Check Local cache, to prevent duplicate load of an item
             if (localCache != null && localCache.Count > 0)
             {
-                string persistentTypeTableName = GetTableName(persistentType);
+                var persistentTypeTableName = GetTableName(persistentType);
                 return localCache.FirstOrDefault(pObj => pObj.Id == id && GetTableName(pObj.GetType()) == persistentTypeTableName);
             }
             return null;
@@ -145,7 +148,7 @@ namespace EasyPersist.Core {
 
         public virtual IPersistent getFromDb(int id, Type objectType, bool lazy = true) {
             //trying to use default constructor
-            ConstructorInfo persistentConstructor = objectType.GetConstructor(
+            var persistentConstructor = objectType.GetConstructor(
                 BindingFlags.Instance | BindingFlags.Public,
                 null,
                 CallingConventions.HasThis,
@@ -155,10 +158,10 @@ namespace EasyPersist.Core {
             if (persistentConstructor == null) {
                 throw new CommonEasyPersistException("Can't find default constructor in persistent class " + objectType.FullName);
             }
-            Object[] parameters = new Object[0];
-            Object p = persistentConstructor.Invoke(parameters);
+            var parameters = Array.Empty<object>();
+            var p = persistentConstructor.Invoke(parameters);
             //creating object of type IPersistent using default constructor
-            IPersistent persistent = (IPersistent)p;
+            var persistent = (IPersistent)p;
             getFromDb(id, ref persistent,lazy);
             return persistent;
         }
@@ -168,9 +171,9 @@ namespace EasyPersist.Core {
         /// </summary>
         /// <param name="sql">an sql which returns a single row result</param>
         /// <param name="objectType">Type of object to return</param>
-        /// <returns>an IPersistent ogect of type from param</returns>
+        /// <returns>an IPersistent object of type from param</returns>
         public virtual IPersistent getFromDb(string sql, Type objectType) {
-            IList<IPersistent> objectsList = getListFromDb(sql, objectType);
+            var objectsList = getListFromDb(sql, objectType);
             if (objectsList.Count > 1) {
                 throw new CommonEasyPersistException("Too many objects loaded. Rows count:" + objectsList.Count);
             }
@@ -184,9 +187,9 @@ namespace EasyPersist.Core {
         /// </summary>
         /// <param name="command">an sql which returns a single row result</param>
         /// <param name="type">Type of object to return</param>
-        /// <returns>an IPersistent ogect of type from param</returns>
+        /// <returns>an IPersistent object of type from param</returns>
         public virtual IPersistent getFromDb(SqlCommand command, Type type) {
-            IList<IPersistent> objectsList = getListFromDb(command, type);
+            var objectsList = getListFromDb(command, type);
             if (objectsList.Count > 1) {
                 throw new CommonEasyPersistException("Too many objects loaded. Rows count:" + objectsList.Count);
             }
@@ -214,7 +217,7 @@ namespace EasyPersist.Core {
                         + " must implement Persistent interface");
                 }
                 //trying to use default constructor
-                ConstructorInfo persistentConstructor = collectionObjectsClass.GetConstructor(
+                var persistentConstructor = collectionObjectsClass.GetConstructor(
                     BindingFlags.Instance | BindingFlags.Public,
                     null,
                     CallingConventions.HasThis,
@@ -224,10 +227,10 @@ namespace EasyPersist.Core {
                 if (persistentConstructor == null) {
                     throw new CommonEasyPersistException("Can't find default constructor in persistent class " + collectionObjectsClass.FullName);
                 }
-                Object[] parameters = new Object[0];
-                Object p = persistentConstructor.Invoke(parameters);
+                var parameters = Array.Empty<object>();
+                var p = persistentConstructor.Invoke(parameters);
                 //creating object of the type IPersistent using default constructor
-                IPersistent persistent = (IPersistent)p;
+                var persistent = (IPersistent)p;
                 //create object from the data raw
                 createObject(row, persistent, alreadyLoaded, true);
                 list.Add(persistent);
@@ -245,32 +248,26 @@ namespace EasyPersist.Core {
         /// <returns>Collection of IPersistent objects from DB</returns>
         public override IList<IPersistent> getListFromDb(PersistentCollectionAttribute pca
             , ref IPersistent parent, Type collectionObjectsClass) {
-            SqlConnection sqlConnection;
-            if(SqlTransaction!=null){
-                sqlConnection = SqlTransaction.Connection;
-            } else
-            {
-                sqlConnection = new SqlConnection(SqlConnectionString);
-            }
-            Type baseCollectionElementType = pca.PersistentType;
-            List<IPersistent> result = new List<IPersistent>();
+            var sqlConnection = SqlTransaction!=null ? SqlTransaction.Connection : new SqlConnection(SqlConnectionString);
+            var baseCollectionElementType = pca.PersistentType;
+            var result = new List<IPersistent>();
             //get PersistentClassAttribute
-            object[] classAttributes = baseCollectionElementType.GetCustomAttributes(typeof(PersistentClassAttribute), false);
+            var classAttributes = baseCollectionElementType.GetCustomAttributes(typeof(PersistentClassAttribute), false);
             if (classAttributes.Length > 1) {
                 throw new CommonEasyPersistException("Too many PersistentClassAttributes for class:"
                                                        + baseCollectionElementType.Name);
             }
             if (classAttributes.Length == 1) {
-                PersistentClassAttribute persistentClassAttribute = (PersistentClassAttribute)classAttributes[0];
-                Type[] inherTypes = new Type[persistentClassAttribute.InheritedTypes.Length + 1];
-                persistentClassAttribute.InheritedTypes.CopyTo(inherTypes, 0);
-                inherTypes[persistentClassAttribute.InheritedTypes.Length] = collectionObjectsClass;
-                foreach (Type type in inherTypes) {
+                var persistentClassAttribute = (PersistentClassAttribute)classAttributes[0];
+                var inheritedTypes = new Type[persistentClassAttribute.InheritedTypes.Length + 1];
+                persistentClassAttribute.InheritedTypes.CopyTo(inheritedTypes, 0);
+                inheritedTypes[persistentClassAttribute.InheritedTypes.Length] = collectionObjectsClass;
+                foreach (var type in inheritedTypes) {
                     if (!type.IsAbstract && !type.IsInterface) {
-                        string selectOfferString = prepareSelectQueryForChildCollections(pca, parent, type, false);
+                        var selectOfferString = prepareSelectQueryForChildCollections(pca, parent, type, false);
                         LOGGER.Log(LogLevel.Information, $"Loading List SQL:{selectOfferString}");
-                        using (SqlCommand cmd = new SqlCommand(selectOfferString, sqlConnection)) {
-                            DataTable table = FillTableFromDatabase(cmd);
+                        using (var cmd = new SqlCommand(selectOfferString, sqlConnection)) {
+                            var table = FillTableFromDatabase(cmd);
                             result.AddRange(getListFromDb(table, type));
                         }
                     }
@@ -289,7 +286,7 @@ namespace EasyPersist.Core {
         /// <returns> IList of collectionObjectsClass Objects</returns>
         public virtual IList<IPersistent> getListFromDb(SqlCommand cmd, Type collectionObjectsClass) {
             LOGGER.Log(LogLevel.Information, $"Loading List SQL:{cmd.CommandText}");
-            DataTable table = FillTableFromDatabase(cmd);
+            var table = FillTableFromDatabase(cmd);
             return getListFromDb(table, collectionObjectsClass);
         }
 
@@ -301,21 +298,21 @@ namespace EasyPersist.Core {
         /// <returns>List of objects</returns>
         public virtual List<T> getListFromDb<T>(SqlCommand cmd) where T : IPersistent
         {
-            IList<IPersistent> items = getListFromDb(cmd, typeof(T));
-            List<T> result = items.Cast<T>().ToList();
+            var items = getListFromDb(cmd, typeof(T));
+            var result = items.Cast<T>().ToList();
             return result;
         }
 
         /// <summary>
         /// Gets a collection of objects from db 
         /// </summary>
-        /// <param name="cmd">SqlCommand запрс к базе</param>
+        /// <param name="cmd">SqlCommand DB query</param>
         /// <param name="collectionObjectsClass">Objects that will be restored from db records</param>
         /// <param name="alreadyLoaded">Already Loaded objects</param>
         /// <returns> IList of collectionObjectsClass Objects</returns>
         public virtual IList<IPersistent> getListFromDb(SqlCommand cmd, Type collectionObjectsClass, IList<IPersistent> alreadyLoaded) {
             LOGGER.Log(LogLevel.Information, $"Loading List Loaded objects:{alreadyLoaded.Count} SQL:{cmd.CommandText}");
-            DataTable table = FillTableFromDatabase(cmd);
+            var table = FillTableFromDatabase(cmd);
             return getListFromDb(table, collectionObjectsClass, alreadyLoaded);
         }
         /// <summary>
@@ -323,14 +320,9 @@ namespace EasyPersist.Core {
         /// </summary>
         /// <param name="cmd"></param>
         /// <returns></returns>
-        private SqlConnection ApplayTransaction(SqlCommand cmd)
+        private SqlConnection ApplyTransaction(SqlCommand cmd)
         {
-            SqlConnection sqlConnection;
-            if (SqlTransaction != null) {
-                sqlConnection = SqlTransaction.Connection;
-            } else {
-                sqlConnection = new SqlConnection(SqlConnectionString);
-            }
+            var sqlConnection = SqlTransaction != null ? SqlTransaction.Connection : new SqlConnection(SqlConnectionString);
             cmd.Connection = sqlConnection;
             cmd.Transaction = SqlTransaction;
             return sqlConnection;
@@ -344,8 +336,8 @@ namespace EasyPersist.Core {
         /// <returns>List of objects</returns>
         public virtual List<T> getListFromDb<T>(string sql) where T : IPersistent
         {
-            IList<IPersistent> items = getListFromDb(sql, typeof (T));
-            List<T> result = items.Cast<T>().ToList();
+            var items = getListFromDb(sql, typeof (T));
+            var result = items.Cast<T>().ToList();
             return result;
         }
 
@@ -356,37 +348,37 @@ namespace EasyPersist.Core {
         /// <param name="collectionObjectsClass">Objects that will be restored from db records</param>
         /// <returns> IList of collectionObjectsClass Objects</returns>
         public virtual IList<IPersistent> getListFromDb(string sql, Type collectionObjectsClass) {
-            SqlCommand cmd = new SqlCommand(sql);
+            var cmd = new SqlCommand(sql);
             cmd.CommandTimeout = CommandTimeout;
             return getListFromDb(cmd, collectionObjectsClass);
         }
         /// <summary>
         /// Gets a collection of objects from db 
         /// </summary>
-        /// <param name="sql">Sql запрс к базе</param>
+        /// <param name="sql">Sql query</param>
         /// <param name="collectionObjectsClass">Objects that will be restored from db records</param>
         /// <param name="alreadyLoaded">Already Loaded objects</param>
         /// <returns> IList of collectionObjectsClass Objects</returns>
         public virtual IList<IPersistent> getListFromDb(String sql, Type collectionObjectsClass, IList<IPersistent> alreadyLoaded) {
             LOGGER.Log(LogLevel.Information, $"Loading List Loaded objects:{alreadyLoaded.Count} SQL:{sql}");
-            SqlCommand cmd = new SqlCommand(sql);
+            var cmd = new SqlCommand(sql);
             cmd.CommandTimeout = CommandTimeout;
             return getListFromDb(cmd, collectionObjectsClass, alreadyLoaded);
         }
         public virtual List<T> GetReadOnlyListFromDb<T>(SqlCommand cmd)
         {
             LOGGER.Log(LogLevel.Information, $"Loading Read Only List SQL:{cmd.CommandText}");
-            ApplayTransaction(cmd);
-            DataTable table = FillTableFromDatabase(cmd);
+            ApplyTransaction(cmd);
+            var table = FillTableFromDatabase(cmd);
             return GetReadOnlyListFromDb<T>(table);
         }
         public virtual List<T> GetReadOnlyListFromDb<T>(DataTable table)
         {
-            List<T> list = new List<T>();
+            var list = new List<T>();
             foreach (DataRow row in table.Rows)
             {
                 //trying to use default constructor
-                ConstructorInfo persistentConstructor = typeof(T).GetConstructor(
+                var persistentConstructor = typeof(T).GetConstructor(
                     BindingFlags.Instance | BindingFlags.Public,
                     null,
                     CallingConventions.HasThis,
@@ -397,8 +389,8 @@ namespace EasyPersist.Core {
                 {
                     throw new CommonEasyPersistException("Can't find default constructor in class " + typeof(T).FullName);
                 }
-                object[] parameters = new object[0];
-                T obj = (T)persistentConstructor.Invoke(parameters);
+                var parameters = Array.Empty<object>();
+                var obj = (T)persistentConstructor.Invoke(parameters);
                 CreateReadOnlyObject(row, obj);
                 list.Add(obj);
             }
@@ -414,8 +406,8 @@ namespace EasyPersist.Core {
         [Obsolete("Use Generic GetReadOnlyListFromDb")]
         public virtual ArrayList GetReadOnlyListFromDb(SqlCommand cmd, Type collectionObjectsClass) {
             LOGGER.Log(LogLevel.Information, $"Loading Read Only List SQL:{cmd.CommandText}");
-            ApplayTransaction(cmd);
-            DataTable table = FillTableFromDatabase(cmd);
+            ApplyTransaction(cmd);
+            var table = FillTableFromDatabase(cmd);
             return GetReadOnlyListFromDb(table, collectionObjectsClass);
         }
 
@@ -428,9 +420,9 @@ namespace EasyPersist.Core {
         /// <returns></returns>
         [Obsolete("Use Generic GetReadOnlyListFromDb")]
         public virtual ArrayList GetReadOnlyListFromDb(DataTable table, Type collectionObjectsClass) {
-            ArrayList list = new ArrayList();
+            var list = new ArrayList();
             foreach (DataRow row in table.Rows) {
-                ConstructorInfo persistentConstructor = collectionObjectsClass.GetConstructor(
+                var persistentConstructor = collectionObjectsClass.GetConstructor(
                     BindingFlags.Instance | BindingFlags.Public,
                     null,
                     CallingConventions.HasThis,
@@ -440,8 +432,8 @@ namespace EasyPersist.Core {
                 if (persistentConstructor == null) {
                     throw new CommonEasyPersistException("Can't find default constructor in class " + collectionObjectsClass.FullName);
                 }
-                var parameters = new object[0];
-                object obj = persistentConstructor.Invoke(parameters);
+                var parameters = Array.Empty<object>();
+                var obj = persistentConstructor.Invoke(parameters);
                 CreateReadOnlyObject(row, obj);
                 list.Add(obj);
             }
@@ -455,12 +447,12 @@ namespace EasyPersist.Core {
         /// <param name="parent">owner of the collection</param>
         /// <returns>number of elements in collection</returns>
         public override int CountCollectionItems(PersistentCollectionAttribute pca, IPersistent parent) {
-            String selectOfferString = prepareSelectQueryForChildCollections(pca, parent, pca.PersistentType, true);
+            var selectOfferString = prepareSelectQueryForChildCollections(pca, parent, pca.PersistentType, true);
             int res;
-            SqlConnection sqlConnection;
-            using (SqlCommand cmd = new SqlCommand(selectOfferString))
+            using (var cmd = new SqlCommand(selectOfferString))
             {
                 //if global transaction is not null we use it
+                SqlConnection sqlConnection;
                 if (SqlTransaction != null) {
                     sqlConnection = SqlTransaction.Connection;
                     cmd.CommandTimeout = CommandTimeout;
@@ -488,7 +480,7 @@ namespace EasyPersist.Core {
         /// <param name="persistent">an object to save or update</param>
         /// <param name="transaction">a transaction to use</param>
         public virtual void SaveOrUpdate(IPersistent persistent, SqlTransaction transaction) {
-            bool update = false;
+            var update = false;
             if (persistent == null) {
                 throw new CommonEasyPersistException("Can't save null in db");
             }
@@ -496,27 +488,27 @@ namespace EasyPersist.Core {
             if (persistent.Id != 0) {
                 update = true;
             }
-            if (!update && persistent is ILazy && !((ILazy)persistent).Initialized) {
+            if (!update && persistent is ILazy lazy && !lazy.Initialized) {
                 throw new LazyAccessException("Can't save an object which is lazy and not initialized.");
             }
             ///Parent types stack
-            Stack<Type> stack = new Stack<Type>();
-            Type type = persistent.GetType();
+            var stack = new Stack<Type>();
+            var type = persistent.GetType();
             while (type != null && type != typeof(object) && typeof(IPersistent).IsAssignableFrom(type)) {
                 stack.Push(type);
                 type = type.BaseType;
             }
 
-            foreach (Type typeFromStack in stack) {
-                SqlCommand updateCommand = GetUpdateCommandWithParameters(typeFromStack, persistent, transaction);
+            foreach (var typeFromStack in stack) {
+                var updateCommand = GetUpdateCommandWithParameters(typeFromStack, persistent, transaction);
                 //TODO probably move into loop above
                 //Creating SQL queries
                 //For insert
                 string updateCommandText;
                 if (!update) {
-                    StringBuilder dbNames = new StringBuilder("");
-                    StringBuilder dbValues = new StringBuilder("");
-                    for (int i = 0; i < updateCommand.Parameters.Count; i++) {
+                    var dbNames = new StringBuilder("");
+                    var dbValues = new StringBuilder("");
+                    for (var i = 0; i < updateCommand.Parameters.Count; i++) {
                         dbNames.Append("[").Append(updateCommand.Parameters[i].SourceColumn).Append("]");
                         dbValues.Append("@").Append(updateCommand.Parameters[i].ParameterName);
                         if (i + 1 < updateCommand.Parameters.Count) {
@@ -528,8 +520,8 @@ namespace EasyPersist.Core {
                         + " ( " + dbNames + " ) VALUES ( " + dbValues + " ); select scope_identity()";
                 } else {
                     //for update
-                    StringBuilder dbNamesValues = new StringBuilder("");
-                    for (int i = 0; i < updateCommand.Parameters.Count; i++) {
+                    var dbNamesValues = new StringBuilder("");
+                    for (var i = 0; i < updateCommand.Parameters.Count; i++) {
                         dbNamesValues.Append("[").Append(updateCommand.Parameters[i].SourceColumn)
                         .Append("]=@").Append(updateCommand.Parameters[i].ParameterName);
                         if (i + 1 < updateCommand.Parameters.Count) {
@@ -552,7 +544,7 @@ namespace EasyPersist.Core {
                     } else {
                         LOGGER.Log(LogLevel.Information, $"Inserting an object with id:{persistent.Id} SQL:{updateCommandText}");
                         LOGGER.Log(LogLevel.Information, updateCommand.Parameters.ToString());
-                        object result = updateCommand.ExecuteScalar();
+                        var result = updateCommand.ExecuteScalar();
                         if (result != null && result != DBNull.Value) {
                             if (persistent.Id == 0)//for inheritance
                             {
@@ -572,22 +564,22 @@ namespace EasyPersist.Core {
         }
 
         private SqlCommand GetUpdateCommandWithParameters(Type type, IPersistent persistent, SqlTransaction transaction) {
-            SqlCommand updateCommand = new SqlCommand();
+            var updateCommand = new SqlCommand();
             updateCommand.Connection = transaction.Connection;
             updateCommand.Transaction = transaction;
             updateCommand.CommandTimeout = CommandTimeout;
-            //for lasy checks if initialized object, for not lazy always is false
-            bool isInitialized = persistent is ILazy && ((ILazy)persistent).Initialized;
+            //for lazy checks if initialized object, for not lazy always is false
+            var isInitialized = persistent is ILazy lazy && lazy.Initialized;
             //loop object properties
-            foreach (PropertyInfo pi in type.GetProperties(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public)) {
-                object[] customAttributes = pi.GetCustomAttributes(false);
+            foreach (var pi in type.GetProperties(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public)) {
+                var customAttributes = pi.GetCustomAttributes(false);
                 //loop property attributes
-                foreach (object o in customAttributes) {
+                foreach (var o in customAttributes) {
                     if (o.GetType() == typeof(PersistentPropertyAttribute) && pi.Name != "Id") {
-                        PersistentPropertyAttribute ppa = (PersistentPropertyAttribute)o;
+                        var ppa = (PersistentPropertyAttribute)o;
                         if ((ppa.Lazy && isInitialized) || !ppa.Lazy) {//add only if not lazy or not initialized
-                            string dbFieldName = ppa.DbFieldName;
-                            SqlParameter sqlParameter = new SqlParameter();
+                            var dbFieldName = ppa.DbFieldName;
+                            var sqlParameter = new SqlParameter();
                             sqlParameter.DbType = ppa.DbType;
                             sqlParameter.IsNullable = true;
                             sqlParameter.ParameterName = alfaNumOnlyRegex.Replace(dbFieldName, "_");
@@ -607,7 +599,7 @@ namespace EasyPersist.Core {
                                     sqlParameter.Value = sqlParameter.Value.ToString();
                                 }
                             } else {
-                                IPersistent linkedPersistent = (IPersistent)pi.GetValue(persistent, null);
+                                var linkedPersistent = (IPersistent)pi.GetValue(persistent, null);
                                 if (linkedPersistent != null) {
                                     sqlParameter.Value = linkedPersistent.Id;
                                 } else {
@@ -621,20 +613,20 @@ namespace EasyPersist.Core {
                     {
                         if (pi.GetValue(persistent,null) == null)
                         {
-                            ArrayListWrapper alw = new ArrayListWrapper((PersistentCollectionAttribute)o,
+                            var alw = new ArrayListWrapper((PersistentCollectionAttribute)o,
                                                        persistent, ((PersistentCollectionAttribute)o).PersistentType, this);
                             pi.SetValue(persistent, alw, null);
                         }
                     }
                 }
             }
+            
             //we add an id in to update parameters collection if needed
             if (type.GetProperty("Id", BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public) == null) {
-                PropertyInfo pi = type.GetProperty("Id");
-                PersistentPropertyAttribute ppa =
-                   (PersistentPropertyAttribute)pi.GetCustomAttributes(typeof(PersistentPropertyAttribute), false)[0];
-                string dbFieldName = ppa.DbFieldName;
-                SqlParameter sqlParameter = new SqlParameter();
+                var pi = type.GetProperty("Id");
+                var ppa = (PersistentPropertyAttribute)pi.GetCustomAttributes(typeof(PersistentPropertyAttribute), false)[0];
+                var dbFieldName = ppa.DbFieldName;
+                var sqlParameter = new SqlParameter();
                 sqlParameter.DbType = ppa.DbType;
                 sqlParameter.IsNullable = true;
                 sqlParameter.ParameterName = alfaNumOnlyRegex.Replace(dbFieldName, "_");
@@ -642,6 +634,7 @@ namespace EasyPersist.Core {
                 sqlParameter.SourceColumn = dbFieldName;
                 updateCommand.Parameters.Add(sqlParameter);
             }
+            
             return updateCommand;
         }
 
@@ -665,7 +658,7 @@ namespace EasyPersist.Core {
                     if (sqlConnection.State != ConnectionState.Open) {
                         sqlConnection.Open();
                     }
-                    using(SqlTransaction transaction = sqlConnection.BeginTransaction())
+                    using(var transaction = sqlConnection.BeginTransaction())
                     {
                         try {
                             SaveOrUpdate(persistent, transaction);
@@ -687,12 +680,12 @@ namespace EasyPersist.Core {
         public override void DeleteObject(ref IPersistent persistent) {
             if(SqlTransaction==null)
             {
-                using(SqlConnection sqlConnection = new SqlConnection(SqlConnectionString))
+                using(var sqlConnection = new SqlConnection(SqlConnectionString))
                 {
                     if (sqlConnection.State != ConnectionState.Open) {
                         sqlConnection.Open();
                     }
-                    using (SqlTransaction transaction = sqlConnection.BeginTransaction())
+                    using (var transaction = sqlConnection.BeginTransaction())
                     {
                         try {
                             DeleteObject(ref persistent, transaction);
@@ -715,8 +708,8 @@ namespace EasyPersist.Core {
         /// <param name="persistent"></param>
         /// <param name="transaction"></param>
         public virtual void DeleteObject(ref IPersistent persistent, SqlTransaction transaction) {
-            string deleteSql = $"DELETE FROM {GetTableName(persistent.GetType())} WHERE {IdColumnName(persistent)}=@id";
-            SqlCommand sqlCommand = new SqlCommand(deleteSql, transaction.Connection, transaction);
+            var deleteSql = $"DELETE FROM {GetTableName(persistent.GetType())} WHERE {IdColumnName(persistent)}=@id";
+            var sqlCommand = new SqlCommand(deleteSql, transaction.Connection, transaction);
             sqlCommand.Parameters.AddWithValue("id", persistent.Id);
             sqlCommand.CommandTimeout = CommandTimeout;
             LOGGER.Log(LogLevel.Information, $"Deleting an object with id:{persistent.Id} SQL:{deleteSql}");
@@ -731,13 +724,13 @@ namespace EasyPersist.Core {
         ///usually used to remove extra count query when the collection is not supposed to be empty
         /// </summary>
         /// <param name="collection">Lazy Collection ArrayListWrapper</param>
-        public static void InitializeLazyCollection(ArrayList collection) {
-            if (collection != null) {
-                if (collection.GetType() == typeof(ArrayListWrapper)) {
-                    ((ArrayListWrapper)collection).Initialize();
-                } else {
-                    throw new CommonEasyPersistException("This collection is not a descendant of ArrayListWrapper.");
-                }
+        public static void InitializeLazyCollection(ArrayList collection)
+        {
+            if (collection == null) return;
+            if (collection.GetType() == typeof(ArrayListWrapper)) {
+                ((ArrayListWrapper)collection).Initialize();
+            } else {
+                throw new CommonEasyPersistException("This collection is not a descendant of ArrayListWrapper.");
             }
         }
 
@@ -750,33 +743,35 @@ namespace EasyPersist.Core {
         {
             var props = parent.GetType().GetProperties().Where(
                 prop => Attribute.IsDefined(prop, typeof(PersistentCollectionManyToManyAttribute)));
-            foreach (PropertyInfo propertyInfo in props)
+            foreach (var propertyInfo in props)
             {
-                object[] attributes = propertyInfo.GetCustomAttributes(typeof(PersistentCollectionManyToManyAttribute), false);
+                var attributes = propertyInfo.GetCustomAttributes(typeof(PersistentCollectionManyToManyAttribute), false);
                 if (attributes.Length != 1)
                 {
-                    string message = "Property: " + propertyInfo.Name + " of type:" + parent.GetType()
-                                     + " has more than one PersistentCollectionManyToManyAttributes. Only one is allowed.";
+                    var message =
+                        $"Property: {propertyInfo.Name} of type:{parent.GetType()} " +
+                        "has more than one PersistentCollectionManyToManyAttributes. Only one is allowed.";
                     throw new CommonEasyPersistException(message);
                 }
-                PersistentCollectionManyToManyAttribute attribute = (PersistentCollectionManyToManyAttribute)attributes[0];
-                if (attribute.PersistentType == child.GetType())
+                var attribute = (PersistentCollectionManyToManyAttribute)attributes[0];
+                if (attribute.PersistentType != child.GetType())
                 {
-                    string linkTableName = attribute.LinkTable;
-                    string parentIdColumn = attribute.DbFieldName;
-                    string childIdColumn = attribute.LinkTableJoinFieldName;
-                    //sql commands
-                    string deleteSql = "DELETE FROM [" + linkTableName + "] WHERE ["
-                                       + parentIdColumn + " ] = @parentId AND [" + childIdColumn + "]=@childId;";
-                    string insertSql = "INSERT INTO [" + linkTableName + "] (["
-                                       + parentIdColumn + "],[" + childIdColumn + "]) VALUES (@parentId,@childId);";
-                    string batchedCommand = deleteSql + insertSql;
-                    using (SqlCommand command = new SqlCommand(batchedCommand))
-                    {
-                        command.Parameters.AddWithValue("parentId", parent.Id);
-                        command.Parameters.AddWithValue("childId", child.Id);
-                        ExecuteNonQuery(command);
-                    }
+                    continue;
+                }
+                var linkTableName = attribute.LinkTable;
+                var parentIdColumn = attribute.DbFieldName;
+                var childIdColumn = attribute.LinkTableJoinFieldName;
+                //sql commands
+                var deleteSql = "DELETE FROM [" + linkTableName + "] WHERE ["
+                                + parentIdColumn + " ] = @parentId AND [" + childIdColumn + "]=@childId;";
+                var insertSql = "INSERT INTO [" + linkTableName + "] (["
+                                + parentIdColumn + "],[" + childIdColumn + "]) VALUES (@parentId,@childId);";
+                var batchedCommand = deleteSql + insertSql;
+                using (var command = new SqlCommand(batchedCommand))
+                {
+                    command.Parameters.AddWithValue("parentId", parent.Id);
+                    command.Parameters.AddWithValue("childId", child.Id);
+                    ExecuteNonQuery(command);
                 }
             }
         }
@@ -788,9 +783,9 @@ namespace EasyPersist.Core {
         /// <returns>DataTable with results from database</returns>
         private DataTable FillTableFromDatabase(SqlCommand cmd)
         {
-            DataTable table = new DataTable();
-            ApplayTransaction(cmd);
-            using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+            var table = new DataTable();
+            ApplyTransaction(cmd);
+            using (var da = new SqlDataAdapter(cmd))
             {
                 da.Fill(table);
             }
@@ -809,9 +804,9 @@ namespace EasyPersist.Core {
         /// <param name="persistent">a persistent to make string from</param>
         /// <returns>human readable representation of object</returns>
         public static string ToString(IPersistent persistent) {
-            string value = "";
+            var value = "";
             if (!(persistent is ILazy)) {
-                foreach (PropertyInfo pi in persistent.GetType().GetProperties()) {
+                foreach (var pi in persistent.GetType().GetProperties()) {
                     value += pi.Name + "=" + pi.GetGetMethod().Invoke(persistent, new object[]{}) + "\n";
                 }
             } else {
@@ -825,14 +820,14 @@ namespace EasyPersist.Core {
         /// <param name="persistent">an object to make csv from</param>
         /// <returns>csv string of properties marked with PersistentPropertyAttribute </returns>
         public static string ToCsvString(IPersistent persistent) {
-            StringBuilder stringBuilder = new StringBuilder();
+            var stringBuilder = new StringBuilder();
             if (!(persistent is ILazy)) {
-                foreach (PropertyInfo pi in persistent.GetType().GetProperties()) {
-                    Object[] customAttributes = pi.GetCustomAttributes(true);
-                    foreach (Object o in customAttributes) {
+                foreach (var pi in persistent.GetType().GetProperties()) {
+                    var customAttributes = pi.GetCustomAttributes(true);
+                    foreach (var o in customAttributes) {
                         if (o.GetType().Name.Equals("PersistentPropertyAttribute")) {
-                            object result = pi.GetGetMethod().Invoke(persistent, new object[] { });
-                            string resultedString = result.ToString();
+                            var result = pi.GetGetMethod().Invoke(persistent, new object[] { });
+                            var resultedString = result.ToString();
                             resultedString = resultedString.Replace(Environment.NewLine, " ");
                             resultedString = resultedString.Replace("\"", "'");
                             stringBuilder.Append("\"");
@@ -858,7 +853,7 @@ namespace EasyPersist.Core {
         /// <param name="cmd">query</param>
         /// <returns>(int)cmd.ExecuteScalar();</returns>
         public virtual int CountItems(SqlCommand cmd) {
-            SqlConnection sqlConnection = ApplayTransaction(cmd);
+            var sqlConnection = ApplyTransaction(cmd);
             if (sqlConnection.State != ConnectionState.Open)
             {
                 sqlConnection.Open();
@@ -882,7 +877,7 @@ namespace EasyPersist.Core {
         /// <param name="cmd"></param>
         /// <returns>returns cmd.ExecuteScalar(); Object</returns>
         public virtual object ExecuteScalar(SqlCommand cmd) {
-            SqlConnection sqlConnection = ApplayTransaction(cmd);
+            var sqlConnection = ApplyTransaction(cmd);
             if (sqlConnection.State!=ConnectionState.Open) {
                 sqlConnection.Open();
             }
@@ -911,11 +906,10 @@ namespace EasyPersist.Core {
         /// <param name="transaction">Transaction to use</param>
         /// <returns>cmd.ExecuteScalar()</returns>
         public virtual object ExecuteScalar(SqlCommand cmd, SqlTransaction transaction) {
-            object res;
             cmd.Transaction = transaction;
             cmd.Connection = transaction.Connection;
             LOGGER.Log(LogLevel.Information, $"Executing ExecuteScalar command SQL:{cmd.CommandText}");
-            res = cmd.ExecuteScalar();
+            var res = cmd.ExecuteScalar();
             cmd.Dispose();
             return res;
         }
@@ -925,7 +919,7 @@ namespace EasyPersist.Core {
         /// <param name="cmd">SQL command to execute</param>
         /// <returns>The number of rows affected</returns>
         public virtual int ExecuteNonQuery(SqlCommand cmd) {
-            SqlConnection sqlConnection = ApplayTransaction(cmd);
+            var sqlConnection = ApplyTransaction(cmd);
             if (sqlConnection.State != ConnectionState.Open)
             {
                 sqlConnection.Open();
@@ -964,7 +958,7 @@ namespace EasyPersist.Core {
             cmd.Transaction = transaction;
             cmd.Connection = transaction.Connection;
             LOGGER.Log(LogLevel.Information, $"Executing ExecuteNonQuery command SQL:{cmd.CommandText}");
-            int res = cmd.ExecuteNonQuery();
+            var res = cmd.ExecuteNonQuery();
             cmd.Dispose();
             return res;
         }
@@ -975,7 +969,7 @@ namespace EasyPersist.Core {
         /// <returns></returns>
         public virtual DataTable GetList(SqlCommand cmd) {
             LOGGER.Log(LogLevel.Information, $"Executing GetList command SQL:{cmd.CommandText}");
-            DataTable table = FillTableFromDatabase(cmd);
+            var table = FillTableFromDatabase(cmd);
             cmd.Dispose();
             return table;
         }
@@ -988,7 +982,7 @@ namespace EasyPersist.Core {
         /// <param name="cmdText">SQL query text</param>
         /// <returns>The number of rows affected</returns>
         public virtual int ExecuteNonQuery(string cmdText) {
-            SqlCommand sqlCommand = new SqlCommand(cmdText);
+            var sqlCommand = new SqlCommand(cmdText);
             return ExecuteNonQuery(sqlCommand);
         }
         #endregion

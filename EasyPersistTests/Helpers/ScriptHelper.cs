@@ -1,27 +1,28 @@
-using System;
-using System.Data;
-using System.Data.SqlClient;
-using System.IO;
-using System.Reflection;
-using System.Text.RegularExpressions;
-
 namespace EasyPersist.Tests.Helpers
 {
-	/// <summary>
-	/// Класс для выполнения скриптов.</summary>
-	public sealed class SqlScriptHelper
+    using System;
+    using System.Data;
+    using System.IO;
+    using System.Reflection;
+    using System.Text.RegularExpressions;
+    using Microsoft.Data.SqlClient;
+
+    /// <summary>
+    /// Execute scripts
+	/// </summary>
+	public static class SqlScriptHelper
 	{
 		public static Regex _NonWhiteRegex = new Regex(@"\S+", RegexOptions.ExplicitCapture|RegexOptions.Compiled|RegexOptions.Multiline);
 
 		public static Regex _GoRegex = new Regex(@"^\s*(g|G)(o|O)\s*$", RegexOptions.ExplicitCapture|RegexOptions.Compiled|RegexOptions.Multiline);
 		
 		/// <summary>
-		/// Выполняет SQL-скрипт.</summary>
-		/// <param name="command"><see cref="SqlCommand"/>, в котором должно быть задано свойство <see cref="SqlCommand.Connection"/>.</param>
-		/// <param name="script">SQL-скрипт.</param>
-		/// <remarks>Если текст скрипта разделен ключевым словом "GO", то он выполняется последовательными командами.</remarks>
-		/// <exception cref="ArgumentNullException">Если не задана команда или <see cref="SqlCommand.Connection"/>.</exception>
-		/// <exception cref="SqlException">Если произошла ошибка при выполнении скрипта на сервере.</exception>
+		/// Executes SQL-script.</summary>
+		/// <param name="command"><see cref="SqlCommand"/>, must specify the property <see cref="SqlCommand.Connection"/>.</param>
+		/// <param name="script">SQL-script.</param>
+		/// <remarks>If the script is split with "GO" commands, then it will be executed with multiple sequential commands.</remarks>
+		/// <exception cref="ArgumentNullException">If the command is not  specified or <see cref="SqlCommand.Connection"/>.</exception>
+		/// <exception cref="SqlException">If the sql execution error happened on the SQL Server.</exception>
 		private static void InternalExecuteScript(SqlCommand command, string script)
 		{
 			if( command == null || command.Connection == null ) 
@@ -29,8 +30,6 @@ namespace EasyPersist.Tests.Helpers
 				throw new ArgumentNullException();
 			}
 			string [] commands = _GoRegex.Split(script);
-			// инициализируем Regex для поиска "пропусков"
-			// если нужно, открываем соединение
 			bool isNeedCloseConnection;
 			if( command.Connection.State == ConnectionState.Closed )
 			{
@@ -43,15 +42,12 @@ namespace EasyPersist.Tests.Helpers
 			}
 			try
 			{
-				// перебираем все команды
 				foreach( string commandText in commands )
 				{
 					if( !_NonWhiteRegex.IsMatch(commandText) )
 					{
-						// выполнять нечего
 						continue;
 					}
-					// выполняем команду
 					command.CommandText = commandText;
 					command.ExecuteNonQuery();
 				}
@@ -66,11 +62,12 @@ namespace EasyPersist.Tests.Helpers
 		}
 
 		/// <summary>
-		/// Выполняет SQL-скрипт.</summary>
-		/// <param name="transaction">Транзакция, в рамках которой должен выполнится скрипт.</param>
-		/// <param name="script">SQL-скрипт.</param>
-		/// <remarks>Если текст скрипта разделен ключевым словом "GO", то он выполняется последовательными командами.</remarks>
-		/// <exception cref="SqlException">Если произошла ошибка при выполнении скрипта на сервере.</exception>
+		/// Executes SQL-script.
+		/// </summary>
+		/// <param name="transaction">Transaction to execute the script.</param>
+		/// <param name="script">SQL-script.</param>
+        /// <exception cref="ArgumentNullException">If the command is not  specified or <see cref="SqlCommand.Connection"/>.</exception>
+        /// <exception cref="SqlException">If the sql execution error happened on the SQL Server.</exception>
 		public static void ExecuteScript(SqlTransaction transaction, string script)
 		{
 			CheckParameters(script, transaction);
@@ -82,55 +79,58 @@ namespace EasyPersist.Tests.Helpers
 		}
 
 		/// <summary>
-		/// Выполняет SQL-скрипт.</summary>
-		/// <param name="connection">Соединение с БД.</param>
-		/// <param name="script">SQL-скрипт.</param>
-		/// <remarks>Если текст скрипта разделен ключевым словом "GO", то он выполняется последовательными командами.</remarks>
-		/// <exception cref="SqlException">Если произошла ошибка при выполнении скрипта на сервере.</exception>
+		/// Executes SQL-script.
+		/// </summary>
+		/// <param name="connection">DB connection.</param>
+		/// <param name="script">SQL-script.</param>
+        /// <exception cref="ArgumentNullException">If the command is not  specified or <see cref="SqlCommand.Connection"/>.</exception>
+        /// <exception cref="SqlException">If the sql execution error happened on the SQL Server.</exception>
 		public static void ExecuteScript(SqlConnection connection, string script)
 		{
 			CheckParameters(script, connection);
-			// инициализируем command
 			SqlCommand command = new SqlCommand();
 			command.Connection = connection;
 			InternalExecuteScript(command, script);
 		}
 		
 		/// <summary>
-		/// Выполняет SQL-скрипт, записанный в ресурсном файле.</summary>
-		/// <param name="transaction">Транзакция, в рамках которой должен выполнится скрипт.</param>
-		/// <param name="resourceName">Название ресурса, содержащего скрипт.</param>
-		/// <remarks>Если текст скрипта разделен ключевым словом "GO", то он выполняется последовательными командами.</remarks>
-		/// <exception cref="SqlException">Если произошла ошибка при выполнении скрипта на сервере.</exception>
+		/// Executes SQL-script from the resource file.</summary>
+		/// <param name="transaction">Transaction to execute the script.</param>
+		/// <param name="resourceName">The name of the resource with the script.</param>
+        /// <exception cref="ArgumentNullException">If the command is not  specified or <see cref="SqlCommand.Connection"/>.</exception>
+        /// <exception cref="SqlException">If the sql execution error happened on the SQL Server.</exception>
 		public static void ExecuteResourceScript(SqlTransaction transaction, string resourceName)
 		{
 			if (resourceName == null)
-				throw new ArgumentNullException("resourceName");
+				throw new ArgumentNullException(nameof(resourceName));
 			ExecuteScript(transaction, GetScript(resourceName));
 		}
 		
 		/// <summary>
-		/// Выполняет SQL-скрипт, записанный в ресурсном файле.</summary>
-		/// <param name="connection">Соединение с БД.</param>
-		/// <param name="resourceName">Название ресурса, содержащего скрипт.</param>
-		/// <remarks>Если текст скрипта разделен ключевым словом "GO", то он выполняется последовательными командами.</remarks>
-		/// <exception cref="SqlException">Если произошла ошибка при выполнении скрипта на сервере.</exception>
+		/// Executes SQL-script from the resource file.</summary>
+		/// <param name="connection">DB connection</param>
+		/// <param name="resourceName">The name of the resource with the script.</param>
+        /// <remarks>If the script is split with "GO" commands, then it will be executed with multiple sequential commands.</remarks>
+        /// <exception cref="SqlException">If the sql execution error happened on the SQL Server.</exception>
 		public static void ExecuteResourceScript(SqlConnection connection, string resourceName)
 		{
 			if (resourceName == null)
-				throw new ArgumentNullException("resourceName");
+				throw new ArgumentNullException(nameof(resourceName));
 			ExecuteScript(connection, GetScript(resourceName));
 		}
 		
 		/// <summary>
-		/// Возвращает скрипт, записанный в ресурсном файле.</summary>
-		/// <param name="resourceName">Название ресурса, содержащего скрипт.</param>
+		/// Returns script from the resource file
+		/// </summary>
+		/// <param name="resourceName">Resource name with the script.</param>
 		public static string GetScript(string resourceName)
 		{
-			if (resourceName == null)
-				throw new ArgumentNullException("resourceName");
-			// получаем поток из вызвавшей сборки
-			Assembly assembly = Assembly.GetExecutingAssembly();
+            if (resourceName == null)
+            {
+                throw new ArgumentNullException(nameof(resourceName));
+            }
+
+            Assembly assembly = Assembly.GetExecutingAssembly();
 			Stream stream = assembly.GetManifestResourceStream(assembly.GetName().Name+"."+resourceName);
 			using( StreamReader streamReader = new StreamReader(stream) )
 			{
@@ -141,23 +141,17 @@ namespace EasyPersist.Tests.Helpers
 		private static void CheckParameters(string script, SqlTransaction transaction)
 		{
 			if (transaction == null)
-				throw new ArgumentNullException("transaction");
+				throw new ArgumentNullException(nameof(transaction));
 			if (script == null)
-				throw new ArgumentNullException("script");
+				throw new ArgumentNullException(nameof(script));
 		}
 
 		private static void CheckParameters(string script, SqlConnection connection)
 		{
 			if (connection == null)
-				throw new ArgumentNullException("transaction");
+				throw new ArgumentNullException(nameof(connection));
 			if (script == null)
-				throw new ArgumentNullException("script");
+				throw new ArgumentNullException(nameof(script));
 		}
-
-		/// <summary>
-		/// Предотвращает создание экземпляра класса.</summary>
-		private SqlScriptHelper()
-		{
-		}
-	}
+    }
 }

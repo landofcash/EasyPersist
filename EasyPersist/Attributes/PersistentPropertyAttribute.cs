@@ -170,7 +170,7 @@ namespace EasyPersist.Core.Attributes
                 {
                     throw new CommonEasyPersistException($"Can't find default constructor in converter class {converter.FullName}");
                 }
-                Converter = (DBValueConverterBase)converterConstructor.Invoke(new Object[0]);
+                Converter = (DBValueConverterBase)converterConstructor.Invoke(Array.Empty<object>());
             }
             DbFieldName = dbFieldName;
         }

@@ -219,7 +219,6 @@ namespace EasyPersist.Core {
                                             {
                                                 IPersistent child = ((IPersistent) constructor.Invoke(new object[]{}));
                                                 //getting an object from database
-                                                //TODO а может это дерьмо сделать lazy??? lazy objects gigi :)
                                                 getFromDb((int) dr[dbFieldName], ref child, alreadyLoaded, true);
                                                 //setting Property 
                                                 pi.SetValue(persistent, child, null);
